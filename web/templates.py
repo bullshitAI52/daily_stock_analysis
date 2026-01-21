@@ -770,7 +770,7 @@ def render_config_page(
         if (status === 'completed' && result.name) {
             const isOpen = openDetails.has(taskId);
             const detailClass = isOpen ? 'task-detail show' : 'task-detail';
-            const cleanSummary = (result.analysis_summary || '').replace(/\n/g, '<br>');
+            const cleanSummary = (result.analysis_summary || '').replace(/\\n/g, '<br>');
             
             detailHtml = `<div class="${detailClass}" id="detail_${taskId}">
                 <div class="task-detail-row"><span class="label">趋势</span><span>${result.trend_prediction || '-'}</span></div>
