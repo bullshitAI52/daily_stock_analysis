@@ -316,15 +316,25 @@ class StockAnalysisPipeline:
             if context is None:
                 logger.warning(f"[{code}] 无法获取分析上下文，跳过分析")
                 return None
+
+            # Step 5.5: 获取深度基本面数据 (F10)
+            logger.info(f"[{code}] 获取深度F10资料...")
+            financial_data = self.akshare_fetcher.get_financial_analysis(code) or {}
+            capital_flow = self.akshare_fetcher.get_capital_flow(code) or {}
+            company_info = self.akshare_fetcher.get_company_info(code) or {}
             
-            # Step 6: 增强上下文数据（添加实时行情、筹码、趋势分析结果、股票名称）
+            # Step 6: 增强上下文数据
             enhanced_context = self._enhance_context(
                 context, 
                 realtime_quote, 
                 chip_data, 
                 trend_result,
-                stock_name  # 传入股票名称
+                stock_name
             )
+            # 注入深度数据
+            enhanced_context['financial_abstract'] = financial_data
+            enhanced_context['capital_flow'] = capital_flow
+            enhanced_context['company_info'] = company_info
             
             # Step 7: 调用 AI 分析（传入增强的上下文和新闻）
             result = self.analyzer.analyze(enhanced_context, news_context=news_context)

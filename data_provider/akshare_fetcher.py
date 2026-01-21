@@ -948,6 +948,62 @@ class AkshareFetcher(BaseFetcher):
         
         return result
 
+    def get_financial_analysis(self, stock_code: str) -> Dict[str, Any]:
+        """
+        获取财务指标摘要（估值、业绩）
+        数据来源: ak.stock_financial_abstract
+        """
+        import akshare as ak
+        try:
+            self._set_random_user_agent()
+            df = ak.stock_financial_abstract(symbol=stock_code)
+            if df is None or df.empty:
+                return {}
+            # 取最新一期
+            latest = df.iloc[-1].to_dict()
+            return latest
+        except Exception as e:
+            logger.warning(f"获取财务摘要失败: {e}")
+            return {}
+
+    def get_capital_flow(self, stock_code: str) -> Dict[str, Any]:
+        """
+        获取资金流向（主力、超大单）
+        数据来源: ak.stock_individual_fund_flow
+        """
+        import akshare as ak
+        try:
+            self._set_random_user_agent()
+            # 市场判断
+            market = "sh" if stock_code.startswith("6") else "sz"
+            df = ak.stock_individual_fund_flow(stock=stock_code, market=market)
+            if df is None or df.empty:
+                return {}
+            # 取最近5日数据
+            recent = df.tail(5).to_dict(orient='records')
+            return {'recent_flow': recent}
+        except Exception as e:
+            logger.warning(f"获取资金流向失败: {e}")
+            return {}
+
+    def get_company_info(self, stock_code: str) -> Dict[str, Any]:
+        """
+        获取上市公司基本信息
+        数据来源: ak.stock_individual_info_em
+        """
+        import akshare as ak
+        try:
+            self._set_random_user_agent()
+            df = ak.stock_individual_info_em(symbol=stock_code)
+            if df is None or df.empty:
+                return {}
+            # 转为字典: item->value
+            info_dict = dict(zip(df['item'], df['value']))
+            return info_dict
+        except Exception as e:
+            logger.warning(f"获取公司信息失败: {e}")
+            return {}
+
 
 if __name__ == "__main__":
     # 测试代码

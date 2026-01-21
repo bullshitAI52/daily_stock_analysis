@@ -934,6 +934,50 @@ class GeminiAnalyzer:
 {chr(10).join('- ' + r for r in trend.get('risk_factors', ['无'])) if trend.get('risk_factors') else '- 无'}
 """
         
+        # 添加深度F10资料
+        if any(k in context for k in ['financial_abstract', 'capital_flow', 'company_info']):
+            prompt += """
+---
+
+## 🏢 深度F10资料 (Eastmoney同源数据)
+"""
+            # 公司信息
+            if 'company_info' in context and context['company_info']:
+                info = context['company_info']
+                prompt += f"""
+### 基本概况
+- **所属行业**: {info.get('所属行业', 'N/A')}
+- **主营业务**: {info.get('主营业务', 'N/A')}
+- **上市日期**: {info.get('上市日期', 'N/A')}
+"""
+            # 财务摘要
+            if 'financial_abstract' in context and context['financial_abstract']:
+                fin = context['financial_abstract']
+                prompt += f"""
+### 核心财务指标 (最新报告期)
+| 指标 | 数值 |
+|------|------|
+| 净利润 | {fin.get('净利润', 'N/A')} |
+| 利润增长 | {fin.get('净利润同比增长', 'N/A')} |
+| 营业总收入 | {fin.get('营业总收入', 'N/A')} |
+| 营收增长 | {fin.get('营业总收入同比增长', 'N/A')} |
+| 每股收益 | {fin.get('基本每股收益', 'N/A')} |
+| 每股净资产 | {fin.get('每股净资产', 'N/A')} |
+"""
+            # 资金流向
+            if 'capital_flow' in context and context['capital_flow']:
+                flow = context['capital_flow'].get('recent_flow', [])
+                if flow:
+                    # 获取最近3天
+                    flow = flow[-3:]
+                    flow_table = "\\n".join([f"| {r.get('日期','')} | {r.get('主力净流入','')} | {r.get('主力净流入占比','')}% |" for r in flow])
+                    prompt += f"""
+### 主力资金流向 (近3日)
+| 日期 | 主力净流入 | 占比 |
+|------|------|------|
+{flow_table}
+"""
+        
         # 添加昨日对比数据
         if 'yesterday' in context:
             volume_change = context.get('volume_change_ratio', 'N/A')
