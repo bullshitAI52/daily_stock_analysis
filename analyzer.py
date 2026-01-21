@@ -1110,7 +1110,9 @@ class GeminiAnalyzer:
                 
                 data = json.loads(json_str, strict=False)
                 
+                
                 # 提取 dashboard 数据
+                dashboard = data.get('dashboard', None)
                 
                 # 智能回退：如果字段缺失，尝试从 dashboard 中提取
                 if not data.get('analysis_summary') and dashboard and 'core_conclusion' in dashboard:
