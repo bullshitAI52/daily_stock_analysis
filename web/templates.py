@@ -1107,8 +1107,8 @@ def render_config_page(
       <!-- 选项 -->
       <div class="form-group" style="margin-bottom: 0.75rem;">
         <select id="report_type" class="report-select" style="width: 100%; text-align: center;" title="选择报告类型">
-            <option value="simple">📝 精简报告 (默认)</option>
-            <option value="full">📊 完整报告 (耗时较长)</option>
+            <option value="full" selected>📊 完整报告 (默认)</option>
+            <option value="simple">📝 精简报告 (极速)</option>
         </select>
       </div>
       
