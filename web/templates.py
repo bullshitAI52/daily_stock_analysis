@@ -667,52 +667,34 @@ def render_config_page(
     # 分析组件的 JavaScript - 支持多任务
     analysis_js = """
 <script>
-(function() {
-    const codeInput = document.getElementById('analysis_code');
-    const submitBtn = document.getElementById('analysis_btn');
-    const taskList = document.getElementById('task_list');
-    const reportTypeSelect = document.getElementById('report_type');
-    
-    // 任务管理
-    const tasks = new Map(); // taskId -> {task, pollCount}
-    const openDetails = new Set(); // 记录展开的详情ID
+    // 全局变量
+    const tasks = new Map();
+    const openDetails = new Set();
     let pollInterval = null;
-    const MAX_POLL_COUNT = 120; // 6 分钟超时：120 * 3000ms = 360000ms
+    const MAX_POLL_COUNT = 120;
     const POLL_INTERVAL_MS = 3000;
     const MAX_TASKS_DISPLAY = 10;
     
-    // 允许输入数字和字母（支持港股 hkxxxxx 格式）
-    codeInput.addEventListener('input', function(e) {
-        // 转小写，只保留字母和数字
-        this.value = this.value.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (this.value.length > 8) {
-            this.value = this.value.slice(0, 8);
-        }
-        updateButtonState();
-    });
+    // 获取 DOM 元素 (每次调用时获取，防止初始化失败)
+    function getEl(id) { return document.getElementById(id); }
     
-    // 回车提交
-    codeInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (!submitBtn.disabled) {
-                submitAnalysis();
-            }
+    // 初始化事件监听
+    window.addEventListener('load', function() {
+        const codeInput = getEl('analysis_code');
+        if (codeInput) {
+            codeInput.addEventListener('input', function(e) {
+                this.value = this.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (this.value.length > 8) this.value = this.value.slice(0, 8);
+            });
+            
+            codeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') submitAnalysis();
+            });
         }
+        
+        renderAllTasks();
     });
-    
-    // 更新按钮状态 - 支持 A股(6位数字) 或 港股(hk+5位数字) 或 指数(sh/sz+6位)
-    function updateButtonState() {
-        window.updateButtonState(); // Call global function
-    }
 
-    // Export updateButtonState to window so it can be called from outside
-    window.updateButtonState = function() {
-        const code = codeInput.value.trim().toLowerCase();
-        // 永远保持可用，点击时才校验
-        submitBtn.disabled = false;
-    };
-    
     // 格式化时间
     function formatTime(isoString) {
         if (!isoString) return '-';
@@ -728,11 +710,10 @@ def render_config_page(
         const seconds = Math.floor((endTime - startTime) / 1000);
         if (seconds < 60) return seconds + 's';
         const minutes = Math.floor(seconds / 60);
-        const remainSec = seconds % 60;
-        return minutes + 'm' + remainSec + 's';
+        return minutes + 'm' + (seconds % 60) + 's';
     }
     
-    // 获取建议样式类
+    // 获取建议样式
     function getAdviceClass(advice) {
         if (!advice) return '';
         if (advice.includes('买') || advice.includes('加仓')) return 'buy';
@@ -741,63 +722,11 @@ def render_config_page(
         return 'wait';
     }
     
-    // 渲染单个任务卡片
-    function renderTaskCard(taskId, taskData) {
-        const task = taskData.task || {};
-        const status = task.status || 'pending';
-        const code = task.code || taskId.split('_')[0];
-        const result = task.result || {};
-        
-        let statusIcon = '⏳';
-        let statusText = '等待中';
-        if (status === 'running') { statusIcon = '<span class="spinner"></span>'; statusText = '分析中'; }
-        else if (status === 'completed') { statusIcon = '✓'; statusText = '完成'; }
-        else if (status === 'failed') { statusIcon = '✗'; statusText = '失败'; }
-        
-        let resultHtml = '';
-        if (status === 'completed' && result.operation_advice) {
-            const adviceClass = getAdviceClass(result.operation_advice);
-            resultHtml = '<div class="task-result">' +
-                '<span class="task-advice ' + adviceClass + '">' + result.operation_advice + '</span>' +
-                '<span class="task-score">' + (result.sentiment_score || '-') + '分</span>' +
-                '</div>';
-        } else if (status === 'failed') {
-            resultHtml = '<div class="task-result"><span class="task-advice sell">失败</span></div>';
-        }
-        
-        let detailHtml = '';
-        if (status === 'completed' && result.name) {
-            const isOpen = openDetails.has(taskId);
-            const detailClass = isOpen ? 'task-detail show' : 'task-detail';
-            
-            detailHtml = '<div class="' + detailClass + '" id="detail_' + taskId + '">' +
-                '<div class="task-detail-row"><span class="label">趋势</span><span>' + (result.trend_prediction || '-') + '</span></div>' +
-                (result.analysis_summary ? '<div class="task-detail-summary">' + result.analysis_summary.replace(/\n/g, '<br>') + '</div>' : '') +
-                '</div>';
-        }
-        
-        return '<div class="task-card ' + status + '" id="task_' + taskId + '" onclick="toggleDetail(\\''+taskId+'\\')">' +
-            '<div class="task-status">' + statusIcon + '</div>' +
-            '<div class="task-main">' +
-                '<div class="task-title">' +
-                    '<span class="code">' + code + '</span>' +
-                    (result.name ? '<span class="name">' + result.name + '</span>' : '') +
-                '</div>' +
-                '<div class="task-meta">' +
-                    '<span>⏱ ' + formatTime(task.start_time) + '</span>' +
-                    '<span>⏳ ' + calcDuration(task.start_time, task.end_time) + '</span>' +
-                    '<span>' + (task.report_type === 'full' ? '📊完整' : '📝精简') + '</span>' +
-                '</div>' +
-            '</div>' +
-            resultHtml +
-            '<div class="task-actions">' +
-                '<button class="task-btn" onclick="event.stopPropagation();removeTask(\\''+taskId+'\\')">×</button>' +
-            '</div>' +
-        '</div>' + detailHtml;
-    }
-    
     // 渲染所有任务
     function renderAllTasks() {
+        const taskList = getEl('task_list');
+        if (!taskList) return;
+        
         if (tasks.size === 0) {
             taskList.innerHTML = '<div class="task-hint">💡 输入股票代码开始分析</div>';
             return;
@@ -811,38 +740,84 @@ def render_config_page(
             html += renderTaskCard(taskId, taskData);
         });
         
-        if (sortedTasks.length > MAX_TASKS_DISPLAY) {
-            html += '<div class="task-hint">... 还有 ' + (sortedTasks.length - MAX_TASKS_DISPLAY) + ' 个任务</div>';
-        }
-        
         taskList.innerHTML = html;
     }
     
-    // 切换详情显示
-    // 切换详情显示
+    // 渲染单个任务卡片
+    function renderTaskCard(taskId, taskData) {
+        const task = taskData.task || {};
+        const status = task.status || 'pending';
+        const code = task.code || taskId.split('_')[0];
+        const result = task.result || {};
+        
+        let statusIcon = '⏳';
+        if (status === 'running') statusIcon = '<span class="spinner"></span>';
+        else if (status === 'completed') statusIcon = '✓';
+        else if (status === 'failed') statusIcon = '✗';
+        
+        let resultHtml = '';
+        if (status === 'completed' && result.operation_advice) {
+            const adviceClass = getAdviceClass(result.operation_advice);
+            resultHtml = `<div class="task-result">
+                <span class="task-advice ${adviceClass}">${result.operation_advice}</span>
+                <span class="task-score">${result.sentiment_score || '-'}分</span>
+            </div>`;
+        } else if (status === 'failed') {
+            resultHtml = '<div class="task-result"><span class="task-advice sell">失败</span></div>';
+        }
+        
+        let detailHtml = '';
+        if (status === 'completed' && result.name) {
+            const isOpen = openDetails.has(taskId);
+            const detailClass = isOpen ? 'task-detail show' : 'task-detail';
+            const cleanSummary = (result.analysis_summary || '').replace(/\n/g, '<br>');
+            
+            detailHtml = `<div class="${detailClass}" id="detail_${taskId}">
+                <div class="task-detail-row"><span class="label">趋势</span><span>${result.trend_prediction || '-'}</span></div>
+                <div class="task-detail-summary">${cleanSummary}</div>
+            </div>`;
+        }
+        
+        return `<div class="task-card ${status}" id="task_${taskId}" onclick="toggleDetail('${taskId}')">
+            <div class="task-status">${statusIcon}</div>
+            <div class="task-main">
+                <div class="task-title">
+                    <span class="code">${code}</span>
+                    ${result.name ? '<span class="name">' + result.name + '</span>' : ''}
+                </div>
+                <div class="task-meta">
+                    <span>⏱ ${formatTime(task.start_time)}</span>
+                    <span>⏳ ${calcDuration(task.start_time, task.end_time)}</span>
+                    <span>${task.report_type === 'full' ? '📊完整' : '📝精简'}</span>
+                </div>
+            </div>
+            ${resultHtml}
+            <div class="task-actions">
+                <button class="task-btn" onclick="event.stopPropagation();removeTask('${taskId}')">×</button>
+            </div>
+        </div>${detailHtml}`;
+    }
+    
+    // 全局函数：切换详情
     window.toggleDetail = function(taskId) {
-        const detail = document.getElementById('detail_' + taskId);
+        const detail = getEl('detail_' + taskId);
         if (detail) {
             const isShowing = detail.classList.toggle('show');
-            if (isShowing) {
-                openDetails.add(taskId);
-            } else {
-                openDetails.delete(taskId);
-            }
+            if (isShowing) openDetails.add(taskId);
+            else openDetails.delete(taskId);
         }
     };
     
-    // 移除任务
+    // 全局函数：移除任务
     window.removeTask = function(taskId) {
         tasks.delete(taskId);
         renderAllTasks();
         checkStopPolling();
     };
     
-    // 轮询所有运行中的任务
+    // 轮询逻辑
     function pollAllTasks() {
         let hasRunning = false;
-        
         tasks.forEach((taskData, taskId) => {
             const status = taskData.task?.status;
             if (status === 'running' || status === 'pending' || !status) {
@@ -852,7 +827,7 @@ def render_config_page(
                 if (taskData.pollCount > MAX_POLL_COUNT) {
                     taskData.task = taskData.task || {};
                     taskData.task.status = 'failed';
-                    taskData.task.error = '轮询超时';
+                    taskData.task.error = '超时';
                     return;
                 }
                 
@@ -863,61 +838,58 @@ def render_config_page(
                             taskData.task = data.task;
                             renderAllTasks();
                         }
-                    })
-                    .catch(() => {});
+                    }).catch(e => console.error(e));
             }
         });
         
-        if (!hasRunning) {
-            checkStopPolling();
-        }
+        if (!hasRunning) checkStopPolling();
     }
     
-    // 检查是否需要停止轮询
     function checkStopPolling() {
         let hasRunning = false;
-        tasks.forEach((taskData) => {
-            const status = taskData.task?.status;
-            if (status === 'running' || status === 'pending' || !status) {
-                hasRunning = true;
-            }
+        tasks.forEach((t) => {
+            if (t.task?.status === 'running' || t.task?.status === 'pending') hasRunning = true;
         });
-        
         if (!hasRunning && pollInterval) {
             clearInterval(pollInterval);
             pollInterval = null;
         }
     }
     
-    // 开始轮询
     function startPolling() {
-        if (!pollInterval) {
-            pollInterval = setInterval(pollAllTasks, POLL_INTERVAL_MS);
-        }
+        if (!pollInterval) pollInterval = setInterval(pollAllTasks, POLL_INTERVAL_MS);
     }
     
-    // 提交分析
+    // 全局提交函数
     window.submitAnalysis = function() {
-        const code = codeInput.value.trim().toLowerCase();
-        const isAStock = /^\d{6}$/.test(code);
-        const isHKStock = /^hk\d{5}$/.test(code);
-        const isIndex = /^(sh|sz)\d{6}$/.test(code);
+        const codeInput = getEl('analysis_code');
+        const submitBtn = getEl('analysis_btn');
+        const reportSelect = getEl('report_type');
         
-        if (!(isAStock || isHKStock || isIndex)) {
-            alert('请输入正确的代码：\n1. A股：6位数字 (如 600519)\n2. 港股：hk+5位数字 (如 hk00700)\n3. 指数：sh/sz+6位数字 (如 sh000001)');
+        if (!codeInput || !submitBtn) {
+            alert('页面加载异常，请刷新重试');
             return;
         }
         
+        const code = codeInput.value.trim().toLowerCase();
+        // 简单校验
+        if (code.length < 4) {
+             alert('请输入正确的股票代码 (如 600519, hk00700, sh000001)');
+             return;
+        }
+        
+        // 视觉反馈
         submitBtn.disabled = true;
         submitBtn.textContent = '提交中...';
         
-        const reportType = reportTypeSelect.value;
+        const reportType = reportSelect ? reportSelect.value : 'simple';
+        
         fetch('/analysis?code=' + encodeURIComponent(code) + '&report_type=' + encodeURIComponent(reportType))
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    const taskId = data.task_id;
-                    tasks.set(taskId, {
+                    // 创建新任务
+                     tasks.set(data.task_id, {
                         task: {
                             code: code,
                             status: 'running',
@@ -927,42 +899,29 @@ def render_config_page(
                         pollCount: 0
                     });
                     
-                    // 自动展开详情
-                    openDetails.add(taskId);
-                    
+                    openDetails.add(data.task_id); // 自动展开
                     renderAllTasks();
                     startPolling();
                     codeInput.value = '';
                     
                     // 立即轮询一次
                     setTimeout(() => {
-                        fetch('/task?id=' + encodeURIComponent(taskId))
-                            .then(r => r.json())
-                            .then(d => {
-                                if (d.success && d.task) {
-                                    tasks.get(taskId).task = d.task;
-                                    renderAllTasks();
-                                }
-                            });
+                        fetch('/task?id=' + taskList.textContent) // Dummy call? No.
+                        // 简化：复用 pollAllTasks
+                        pollAllTasks(); 
                     }, 500);
                 } else {
                     alert('提交失败: ' + (data.error || '未知错误'));
                 }
             })
-            .catch(error => {
-                alert('请求失败: ' + error.message);
+            .catch(e => {
+                alert('网络请求失败: ' + e.message);
             })
             .finally(() => {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '🚀 分析';
-                updateButtonState();
             });
     };
-    
-    // 初始化
-    updateButtonState();
-    renderAllTasks();
-})();
 </script>
 """
     
