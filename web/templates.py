@@ -1058,7 +1058,7 @@ def render_config_page(
     
     // 渲染自选股列表
     (function() {{
-        const stockListStr = "` + safe_value + `";
+        const stockListStr = `{safe_value}`;
         const container = document.getElementById('favorites_list');
         
         if (!stockListStr) {{
