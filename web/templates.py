@@ -906,8 +906,6 @@ def render_config_page(
                     
                     // 立即轮询一次
                     setTimeout(() => {
-                        fetch('/task?id=' + taskList.textContent) // Dummy call? No.
-                        // 简化：复用 pollAllTasks
                         pollAllTasks(); 
                     }, 500);
                 } else {
