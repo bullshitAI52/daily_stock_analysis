@@ -34,6 +34,42 @@ BASE_CSS = """
     --warning: #f59e0b;
 }
 
+/* Mobile Responsive Fixes */
+@media (max-width: 600px) {
+    body { padding: 10px; }
+    .container { padding: 1.25rem; }
+    
+    .input-group { 
+        flex-direction: column; 
+    }
+    
+    .report-select {
+        width: 100%;
+    }
+    
+    .task-card {
+        flex-wrap: wrap;
+        padding-bottom: 0.75rem;
+    }
+    
+    .task-main {
+        min-width: 60%; /* Ensure title takes space */
+    }
+    
+    .task-result {
+        margin-left: auto; /* Push to right */
+    }
+    
+    .task-actions {
+        /* Position absolute to top right if needed, or just flow */
+        margin-left: 0.5rem;
+    }
+    
+    .task-detail {
+        padding-left: 1rem; /* Reduce padding on mobile */
+    }
+}
+
 * {
     box-sizing: border-box;
 }
@@ -639,6 +675,7 @@ def render_config_page(
     
     // 任务管理
     const tasks = new Map(); // taskId -> {task, pollCount}
+    const openDetails = new Set(); // 记录展开的详情ID
     let pollInterval = null;
     const MAX_POLL_COUNT = 120; // 6 分钟超时：120 * 3000ms = 360000ms
     const POLL_INTERVAL_MS = 3000;
@@ -726,7 +763,10 @@ def render_config_page(
         
         let detailHtml = '';
         if (status === 'completed' && result.name) {
-            detailHtml = '<div class="task-detail" id="detail_' + taskId + '">' +
+            const isOpen = openDetails.has(taskId);
+            const detailClass = isOpen ? 'task-detail show' : 'task-detail';
+            
+            detailHtml = '<div class="' + detailClass + '" id="detail_' + taskId + '">' +
                 '<div class="task-detail-row"><span class="label">趋势</span><span>' + (result.trend_prediction || '-') + '</span></div>' +
                 (result.analysis_summary ? '<div class="task-detail-summary">' + result.analysis_summary.substring(0, 100) + '...</div>' : '') +
                 '</div>';
@@ -775,10 +815,16 @@ def render_config_page(
     }
     
     // 切换详情显示
+    // 切换详情显示
     window.toggleDetail = function(taskId) {
         const detail = document.getElementById('detail_' + taskId);
         if (detail) {
-            detail.classList.toggle('show');
+            const isShowing = detail.classList.toggle('show');
+            if (isShowing) {
+                openDetails.add(taskId);
+            } else {
+                openDetails.delete(taskId);
+            }
         }
     };
     
