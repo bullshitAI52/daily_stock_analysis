@@ -1181,6 +1181,23 @@ class GeminiAnalyzer:
         # 确保布尔值是小写
         json_str = json_str.replace('True', 'true').replace('False', 'false')
         
+        # 修复由于长度限制导致的截断 (自动补全)
+        # 1. 补全引号
+        quote_count = json_str.count('"') - json_str.count('\\"')
+        if quote_count % 2 != 0:
+            json_str += '"'
+            
+        # 2. 补全括号
+        open_braces = json_str.count('{')
+        close_braces = json_str.count('}')
+        if open_braces > close_braces:
+            json_str += '}' * (open_braces - close_braces)
+            
+        open_brackets = json_str.count('[')
+        close_brackets = json_str.count(']')
+        if open_brackets > close_brackets:
+            json_str += ']' * (open_brackets - close_brackets)
+        
         return json_str
     
     def _parse_text_response(
