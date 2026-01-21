@@ -931,6 +931,9 @@ def render_config_page(
                         pollCount: 0
                     });
                     
+                    // 自动展开详情
+                    openDetails.add(taskId);
+                    
                     renderAllTasks();
                     startPolling();
                     codeInput.value = '';
