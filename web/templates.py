@@ -92,7 +92,21 @@ body {
     border-radius: 1rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     width: 100%;
-    max-width: 500px;
+    max-width: 900px;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 h2 {
@@ -1002,30 +1016,37 @@ def render_config_page(
     
     <!-- 自选股配置区域 -->
     <!-- 市场概览 & 快捷自选 -->
-    <div class="analysis-section">
-      <h3>📊 市场风向标</h3>
-      <div class="task-actions" style="justify-content: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
-        <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sh000001')">
-          📈 上证指数
-        </button>
-        <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sz399001')">
-          📉 深证成指
-        </button>
-        <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sz399006')">
-          🚀 创业板指
-        </button>
-         <button class="report-select" style="width: auto; background: #fdf4ff; color: #d946ef; border-color: #f0abfc;" onclick="triggerAnalysis('hk00700')">
-          🐧 腾讯控股
-        </button>
-      </div>
+    <!-- 市场概览 & 快捷自选 (Dashboard Grid) -->
+    <div class="dashboard-grid">
+        <!-- 左侧：市场概览 -->
+        <div class="analysis-section" style="margin-top: 0; border-top: none;">
+          <h3>📊 市场风向标</h3>
+          <div class="task-actions" style="justify-content: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+            <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sh000001')">
+              📈 上证指数
+            </button>
+            <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sz399001')">
+              📉 深证成指
+            </button>
+            <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sz399006')">
+              🚀 创业板指
+            </button>
+             <button class="report-select" style="width: auto; background: #fdf4ff; color: #d946ef; border-color: #f0abfc;" onclick="triggerAnalysis('hk00700')">
+              🐧 腾讯控股
+            </button>
+          </div>
+        </div>
 
-      <h3>⚡️ 快捷自选</h3>
-      <div id="favorites_list" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-        <!-- 自选股按钮将通过 JS 渲染 -->
-      </div>
-      <p class="text-muted" style="margin-top: 1rem;">
-        * 列表读取自 .env 配置 (STOCK_LIST)
-      </p>
+        <!-- 右侧：快捷自选 -->
+        <div class="analysis-section" style="margin-top: 0; border-top: none;">
+          <h3>⚡️ 快捷自选</h3>
+          <div id="favorites_list" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+            <!-- 自选股按钮将通过 JS 渲染 -->
+          </div>
+          <p class="text-muted" style="margin-top: 1rem;">
+            * 读取自 .env (STOCK_LIST)
+          </p>
+        </div>
     </div>
 
     <script>
