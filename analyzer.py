@@ -330,8 +330,8 @@ class GeminiAnalyzer:
     "buy_reason": "操作理由，引用交易理念",
     
     "trend_analysis": "走势形态深度分析（结合均线、K线形态详细推演）",
-    "short_term_outlook": "短期1-3日具体走势预测（看涨/看跌/震荡区间）",
-    "medium_term_outlook": "中期1-2周趋势展望",
+    "short_term_outlook": "短期1-3日趋势预判（重点回答：能涨到什么位置？什么信号离场？）",
+    "medium_term_outlook": "中期1-2周趋势展望（关注关键压力位与变盘窗口）",
     "technical_analysis": "技术面深度分析（不少于150字，必须包含：MACD/KDJ指标状态、均线支撑压力位具体数值、成交量配合情况。严禁只写'指标走强'等空话）",
     "ma_analysis": "均线系统详细解读",
     "volume_analysis": "量价关系深度分析",

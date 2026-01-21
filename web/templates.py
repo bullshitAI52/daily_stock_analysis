@@ -847,6 +847,19 @@ def render_config_page(
                     </div>
                 </div>` : ''}
 
+                ${(result.short_term_outlook || result.medium_term_outlook) ? `
+                <div class="task-detail-block">
+                    <h4>🔮 走势预判</h4>
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-color);">⚡️ 短期 (1-3日)</div>
+                        <div class="task-detail-text">${result.short_term_outlook || '-'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-color);">📅 中期 (1-2周)</div>
+                        <div class="task-detail-text">${result.medium_term_outlook || '-'}</div>
+                    </div>
+                </div>` : ''}
+
                 ${result.technical_analysis ? `
                 <div class="task-detail-block">
                     <h4>📊 技术面分析</h4>
