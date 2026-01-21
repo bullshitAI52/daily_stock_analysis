@@ -292,11 +292,11 @@ class StockAnalysisPipeline:
             if do_search:
                 logger.info(f"[{code}] 开始多维度情报搜索 (模式: FULl)...")
                 
-                # 使用多维度搜索（最多3次搜索）
+                # 使用多维度搜索（最多6次搜索，覆盖所有维度）
                 intel_results = self.search_service.search_comprehensive_intel(
                     stock_code=code,
                     stock_name=stock_name,
-                    max_searches=3
+                    max_searches=6
                 )
                 
                 # 格式化情报报告

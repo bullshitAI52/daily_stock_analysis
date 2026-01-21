@@ -725,6 +725,16 @@ class SearchService:
                 'query': f"{stock_name} 年报预告 业绩预告 业绩快报 2025年报",
                 'desc': '业绩预期'
             },
+            {
+                'name': 'industry_analysis',
+                'query': f"{stock_name} 行业地位 竞争对手 市场份额",
+                'desc': '行业分析'
+            },
+            {
+                'name': 'capital_flow',
+                'query': f"{stock_name} 主力资金 龙虎榜 北向资金",
+                'desc': '资金流向'
+            },
         ]
         
         logger.info(f"开始多维度情报搜索: {stock_name}({stock_code})")
@@ -806,6 +816,28 @@ class SearchService:
                     lines.append(f"     {r.snippet[:100]}...")
             else:
                 lines.append("  未找到业绩相关信息")
+        
+        # 行业分析
+        if 'industry_analysis' in intel_results:
+            resp = intel_results['industry_analysis']
+            lines.append(f"\n🏢 行业分析 (来源: {resp.provider}):")
+            if resp.success and resp.results:
+                for i, r in enumerate(resp.results[:3], 1):
+                    lines.append(f"  {i}. {r.title}")
+                    lines.append(f"     {r.snippet[:100]}...")
+            else:
+                lines.append("  未找到行业相关信息")
+        
+        # 资金流向
+        if 'capital_flow' in intel_results:
+            resp = intel_results['capital_flow']
+            lines.append(f"\n💰 资金流向 (来源: {resp.provider}):")
+            if resp.success and resp.results:
+                for i, r in enumerate(resp.results[:3], 1):
+                    lines.append(f"  {i}. {r.title}")
+                    lines.append(f"     {r.snippet[:100]}...")
+            else:
+                lines.append("  未找到资金流向信息")
         
         return "\n".join(lines)
     
