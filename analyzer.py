@@ -347,6 +347,9 @@ class GeminiAnalyzer:
     "sell_price": "建议止盈/目标价格（如 '11.80'）",
     "stop_loss_price": "建议止损价格（如 '10.20'）",
     
+    "plain_talk_short": "大白话：短期多少钱买/卖？（例如：'短期就在10块钱左右低吸，涨到11块这就得跑'）",
+    "plain_talk_long": "大白话：长期多少钱买/卖？（例如：'想拿长线的，等跌穿20日线到9.5再接，目标看新高15元'）",
+    
     "search_performed": true/false,
     "data_sources": "详细列出数据来源（如：新浪财经、同花顺、公司公告、实时行情API）"
 }

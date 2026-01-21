@@ -884,6 +884,21 @@ def render_config_page(
                     <h4>⚠️ 风险提示</h4>
                     <div class="task-detail-text">${(result.risk_warning || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
+
+                ${(result.plain_talk_short || result.plain_talk_long) ? `
+                <div class="task-detail-block" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px;">
+                    <h4 style="color: #2563eb; border-bottom: none; margin-bottom: 5px;">🗣️ 省流大白话</h4>
+                    ${result.plain_talk_short ? `
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; color: #1e40af; font-size: 0.85rem;">⚡️ 短期操作：</span>
+                        <span style="color: #1e3a8a; font-size: 0.9rem;">${result.plain_talk_short}</span>
+                    </div>` : ''}
+                    ${result.plain_talk_long ? `
+                    <div>
+                        <span style="font-weight: bold; color: #1e40af; font-size: 0.85rem;">⏳ 长期部署：</span>
+                        <span style="color: #1e3a8a; font-size: 0.9rem;">${result.plain_talk_long}</span>
+                    </div>` : ''}
+                </div>` : ''}
                 
                 ${result.data_sources ? `
                 <div class="task-detail-footer">
