@@ -957,12 +957,37 @@ def render_config_page(
     };
     
     // 全局函数：切换详情
+    // 全局函数：切换详情
     window.toggleDetail = function(taskId) {
         const detail = getEl('detail_' + taskId);
         if (detail) {
             const isShowing = detail.classList.toggle('show');
-            if (isShowing) openDetails.add(taskId);
-            else openDetails.delete(taskId);
+            
+            const footerDefault = getEl('footer_default');
+            const footerDynamic = getEl('footer_dynamic');
+            const footerShort = getEl('footer_advice_short');
+            const footerLong = getEl('footer_advice_long');
+
+            if (isShowing) {
+                openDetails.add(taskId);
+                // Update Footer
+                const taskData = tasks.get(taskId);
+                if (taskData && taskData.task && taskData.task.result) {
+                    const r = taskData.task.result;
+                    if (r.plain_talk_short || r.plain_talk_long) {
+                         if(footerDefault) footerDefault.style.display = 'none';
+                         if(footerDynamic) footerDynamic.style.display = 'block';
+                         if(footerShort) footerShort.textContent = r.plain_talk_short ? ('⚡️ ' + r.plain_talk_short) : '';
+                         if(footerLong) footerLong.textContent = r.plain_talk_long ? ('⏳ ' + r.plain_talk_long) : '';
+                    }
+                }
+            } else {
+                openDetails.delete(taskId);
+                if (openDetails.size === 0) {
+                    if(footerDefault) footerDefault.style.display = 'block';
+                    if(footerDynamic) footerDynamic.style.display = 'none';
+                }
+            }
         }
     };
     
@@ -1173,8 +1198,14 @@ def render_config_page(
     </script>
     
     <div class="footer">
-      <p style="margin: 0; margin-bottom: 0.5rem;">⚠️ 炒股有风险，仅供参考</p>
-      <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">⏳ 分析需要5分钟左右，可以多次执行分析不同股票代码</p>
+      <div id="footer_default">
+          <p style="margin: 0; margin-bottom: 0.5rem;">⚠️ 炒股有风险，仅供参考</p>
+          <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">⏳ 分析需要5分钟左右，可以多次执行分析不同股票代码</p>
+      </div>
+      <div id="footer_dynamic" style="display: none; background: #eff6ff; padding: 8px; border-radius: 6px; border: 1px solid #bfdbfe; text-align: left;">
+          <p id="footer_advice_short" style="margin: 0; margin-bottom: 4px; font-weight: bold; color: #1e40af; font-size: 0.9rem;"></p>
+          <p id="footer_advice_long" style="margin: 0; color: #1e3a8a; font-size: 0.85rem;"></p>
+      </div>
     </div>
   </div>
   
