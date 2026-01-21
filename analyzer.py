@@ -1107,7 +1107,7 @@ class GeminiAnalyzer:
                 # 尝试修复常见的 JSON 问题
                 json_str = self._fix_json_string(json_str)
                 
-                data = json.loads(json_str)
+                data = json.loads(json_str, strict=False)
                 
                 # 提取 dashboard 数据
                 dashboard = data.get('dashboard', None)
