@@ -229,6 +229,7 @@ class Config:
             webui_enabled=get_clean_env('WEBUI_ENABLED', 'false').lower() == 'true',
             webui_host=get_clean_env('WEBUI_HOST', '127.0.0.1'),
             webui_port=int(get_clean_env('WEBUI_PORT', '8000')),
+            ai_provider=get_clean_env('AI_PROVIDER', 'gemini').lower(),
         )
     
     @classmethod

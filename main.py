@@ -962,7 +962,8 @@ def main() -> int:
                     serpapi_keys=config.serpapi_keys
                 )
             
-            if config.gemini_api_key:
+            # 只要配置了任一 API Key 就初始化分析器
+            if config.gemini_api_key or config.openai_api_key:
                 analyzer = GeminiAnalyzer(api_key=config.gemini_api_key)
             
             run_market_review(notifier, analyzer, search_service)
