@@ -263,14 +263,7 @@ class AnalysisService:
             )
             
             if result:
-                result_data = {
-                    "code": result.code,
-                    "name": result.name,
-                    "sentiment_score": result.sentiment_score,
-                    "operation_advice": result.operation_advice,
-                    "trend_prediction": result.trend_prediction,
-                    "analysis_summary": result.analysis_summary,
-                }
+                result_data = result.to_dict()
                 
                 with self._tasks_lock:
                     self._tasks[task_id].update({

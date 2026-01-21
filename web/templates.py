@@ -577,11 +577,49 @@ button:active {
 }
 
 .task-detail-summary {
-    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text);
+    background: #f8fafc;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--primary);
+}
+
+.task-detail-block {
+    margin-top: 1rem;
+}
+
+.task-detail-block h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    font-weight: 600;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 0.25rem;
+}
+
+.task-detail-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #334155;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.task-detail-block.warning .task-detail-text {
+    color: #b91c1c;
+    background: #fef2f2;
     padding: 0.5rem;
-    background: white;
     border-radius: 0.25rem;
-    line-height: 1.4;
+}
+
+.task-detail-footer {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 0.5rem;
 }
 """
 
@@ -784,7 +822,40 @@ def render_config_page(
             
             detailHtml = `<div class="${detailClass}" id="detail_${taskId}">
                 <div class="task-detail-row"><span class="label">趋势</span><span>${result.trend_prediction || '-'}</span></div>
-                <div class="task-detail-summary">${cleanSummary}</div>
+                
+                <div class="task-detail-block">
+                    <h4>💡 核心结论</h4>
+                    <div class="task-detail-summary">${cleanSummary}</div>
+                </div>
+
+                ${result.technical_analysis ? `
+                <div class="task-detail-block">
+                    <h4>📊 技术面分析</h4>
+                    <div class="task-detail-text">${(result.technical_analysis || '').replace(/\\n/g, '<br>')}</div>
+                </div>` : ''}
+
+                ${result.fundamental_analysis ? `
+                <div class="task-detail-block">
+                    <h4>🏢 基本面分析</h4>
+                    <div class="task-detail-text">${(result.fundamental_analysis || '').replace(/\\n/g, '<br>')}</div>
+                </div>` : ''}
+
+                ${result.news_summary ? `
+                <div class="task-detail-block">
+                    <h4>📰 消息面摘要</h4>
+                    <div class="task-detail-text">${(result.news_summary || '').replace(/\\n/g, '<br>')}</div>
+                </div>` : ''}
+
+                ${result.risk_warning ? `
+                <div class="task-detail-block warning">
+                    <h4>⚠️ 风险提示</h4>
+                    <div class="task-detail-text">${(result.risk_warning || '').replace(/\\n/g, '<br>')}</div>
+                </div>` : ''}
+                
+                ${result.data_sources ? `
+                <div class="task-detail-footer">
+                    <span>📚 数据来源: ${result.data_sources}</span>
+                </div>` : ''}
             </div>`;
         }
         
