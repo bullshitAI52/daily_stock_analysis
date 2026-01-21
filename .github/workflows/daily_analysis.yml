@@ -130,3 +130,29 @@ jobs:
             echo "生成的报告:"
             ls -la reports/
           fi
+
+      - name: 生成静态站点
+        if: success() || failure() # 即使分析部分失败，只要有报告也尝试生成
+        run: |
+          python scripts/generate_site.py
+
+      - name: Upload Pages artifact
+        if: success() || failure()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public/
+
+  deploy:
+    needs: analyze
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    if: always() # 尝试部署，即使分析任务有部分失败 (但需要有 artifact)
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
