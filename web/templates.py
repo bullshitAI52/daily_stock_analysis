@@ -701,8 +701,19 @@ def render_config_page(
         }
     });
     
-    // 更新按钮状态 - 支持 A股(6位数字) 或 港股(hk+5位数字)
+    // 更新按钮状态 - 支持 A股(6位数字) 或 港股(hk+5位数字) 或 指数(sh/sz+6位)
     function updateButtonState() {
+        window.updateButtonState(); // Call global function
+    }
+
+    // Export updateButtonState to window so it can be called from outside
+    window.updateButtonState = function() {
+        const code = codeInput.value.trim().toLowerCase();
+        const isAStock = /^\d{6}$/.test(code);           // A股: 600519
+        const isHKStock = /^hk\d{5}$/.test(code);        // 港股: hk00700
+        const isIndex = /^(sh|sz)\d{6}$/.test(code);     // 指数: sh000001
+        submitBtn.disabled = !(isAStock || isHKStock || isIndex);
+    };
         const code = codeInput.value.trim().toLowerCase();
         const isAStock = /^\\d{6}$/.test(code);           // A股: 600519
         const isHKStock = /^hk\\d{5}$/.test(code);        // 港股: hk00700
@@ -897,8 +908,9 @@ def render_config_page(
         const code = codeInput.value.trim().toLowerCase();
         const isAStock = /^\d{6}$/.test(code);
         const isHKStock = /^hk\d{5}$/.test(code);
+        const isIndex = /^(sh|sz)\d{6}$/.test(code);
         
-        if (!(isAStock || isHKStock)) {
+        if (!(isAStock || isHKStock || isIndex)) {
             return;
         }
         
@@ -989,19 +1001,70 @@ def render_config_page(
     <hr class="section-divider">
     
     <!-- 自选股配置区域 -->
-    <form method="post" action="/update">
-      <div class="form-group">
-        <label for="stock_list">📋 自选股列表 <span class="code-badge">{html.escape(env_filename)}</span></label>
-        <p>仅用于本地环境 (127.0.0.1) • 安全修改 .env 配置</p>
-        <textarea 
-            id="stock_list" 
-            name="stock_list" 
-            rows="4" 
-            placeholder="例如: 600519, 000001 (逗号或换行分隔)"
-        >{safe_value}</textarea>
+    <!-- 市场概览 & 快捷自选 -->
+    <div class="analysis-section">
+      <h3>📊 市场风向标</h3>
+      <div class="task-actions" style="justify-content: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sh000001')">
+          📈 上证指数
+        </button>
+        <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sz399001')">
+          📉 深证成指
+        </button>
+        <button class="report-select" style="width: auto; background: #eff6ff; color: var(--primary); border-color: #bfdbfe;" onclick="triggerAnalysis('sz399006')">
+          🚀 创业板指
+        </button>
+         <button class="report-select" style="width: auto; background: #fdf4ff; color: #d946ef; border-color: #f0abfc;" onclick="triggerAnalysis('hk00700')">
+          🐧 腾讯控股
+        </button>
       </div>
-      <button type="submit">💾 保存</button>
-    </form>
+
+      <h3>⚡️ 快捷自选</h3>
+      <div id="favorites_list" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+        <!-- 自选股按钮将通过 JS 渲染 -->
+      </div>
+      <p class="text-muted" style="margin-top: 1rem;">
+        * 列表读取自 .env 配置 (STOCK_LIST)
+      </p>
+    </div>
+
+    <script>
+    function triggerAnalysis(code) {{
+        document.getElementById('analysis_code').value = code;
+        updateButtonState(); // 触发输入框联动
+        submitAnalysis();
+    }}
+    
+    // 渲染自选股列表
+    (function() {{
+        const stockListStr = "` + safe_value + `";
+        const container = document.getElementById('favorites_list');
+        
+        if (!stockListStr) {{
+            container.innerHTML = '<span class="text-muted">暂无自选股，请在服务器 .env 文件中配置 STOCK_LIST</span>';
+            return;
+        }}
+        
+        const codes = stockListStr.split(/[,\\n\\s]+/).filter(c => c.trim());
+        
+        if (codes.length === 0) {{
+            container.innerHTML = '<span class="text-muted">暂无自选股</span>';
+            return;
+        }}
+        
+        let html = '';
+        codes.forEach(code => {{
+            code = code.trim();
+            if (code) {{
+                html += '<button class="report-select" style="width: auto;" onclick="triggerAnalysis(\\'' + code + '\\')">' + 
+                        '🔖 ' + code + 
+                        '</button>';
+            }}
+        }});
+        
+        container.innerHTML = html;
+    }})();
+    </script>
     
     <div class="footer">
       <p>API: <code>/health</code> · <code>/analysis?code=xxx</code> · <code>/tasks</code></p>
