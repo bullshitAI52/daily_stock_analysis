@@ -885,7 +885,7 @@ def render_config_page(
                     <div class="task-detail-text">${(result.risk_warning || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
 
-                </div>` : ''}
+
 
                 ${(result.plain_talk_short || result.plain_talk_long) ? `
                 <div style="margin: 20px 0; border-top: 2px dashed #eee; padding-top: 20px;">
