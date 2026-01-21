@@ -1096,7 +1096,8 @@ def render_config_page(
     </script>
     
     <div class="footer">
-      <p style="margin: 0;">⚠️ 炒股有风险，仅供参考</p>
+      <p style="margin: 0; margin-bottom: 0.5rem;">⚠️ 炒股有风险，仅供参考</p>
+      <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">⏳ 分析需要5分钟左右，可以多次执行分析不同股票代码</p>
     </div>
   </div>
   
