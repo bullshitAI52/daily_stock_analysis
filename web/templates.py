@@ -723,10 +723,7 @@ def render_config_page(
     // Export updateButtonState to window so it can be called from outside
     window.updateButtonState = function() {
         const code = codeInput.value.trim().toLowerCase();
-        const isAStock = /^\d{6}$/.test(code);           // A股: 600519
-        const isHKStock = /^hk\d{5}$/.test(code);        // 港股: hk00700
-        const isIndex = /^(sh|sz)\d{6}$/.test(code);     // 指数: sh000001
-        submitBtn.disabled = !(isAStock || isHKStock || isIndex);
+        // 只有当输入框有值时才进行视觉反馈（可选）
     };
         const code = codeInput.value.trim().toLowerCase();
         const isAStock = /^\\d{6}$/.test(code);           // A股: 600519
@@ -925,6 +922,7 @@ def render_config_page(
         const isIndex = /^(sh|sz)\d{6}$/.test(code);
         
         if (!(isAStock || isHKStock || isIndex)) {
+            alert('请输入正确的代码：\n1. A股：6位数字 (如 600519)\n2. 港股：hk+5位数字 (如 hk00700)\n3. 指数：sh/sz+6位数字 (如 sh000001)');
             return;
         }
         
@@ -1002,7 +1000,7 @@ def render_config_page(
             <option value="simple">📝 精简报告</option>
             <option value="full">📊 完整报告</option>
           </select>
-          <button type="button" id="analysis_btn" class="btn-analysis" onclick="submitAnalysis()" disabled>
+          <button type="button" id="analysis_btn" class="btn-analysis" onclick="submitAnalysis()">
             🚀 分析
           </button>
         </div>
