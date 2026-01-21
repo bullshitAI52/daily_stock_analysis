@@ -157,8 +157,15 @@ class Config:
         env_path = Path(__file__).parent / '.env'
         load_dotenv(dotenv_path=env_path)
         
+        def get_clean_env(key: str, default: str = '') -> str:
+            """获取并清理环境变量（移除行内注释）"""
+            val = os.getenv(key, default)
+            if val and '#' in val:
+                val = val.split('#', 1)[0]
+            return val.strip()
+
         # 解析自选股列表（逗号分隔）
-        stock_list_str = os.getenv('STOCK_LIST', '')
+        stock_list_str = get_clean_env('STOCK_LIST')
         stock_list = [
             code.strip() 
             for code in stock_list_str.split(',') 
@@ -170,58 +177,58 @@ class Config:
             stock_list = ['600519', '000001', '300750']
         
         # 解析搜索引擎 API Keys（支持多个 key，逗号分隔）
-        bocha_keys_str = os.getenv('BOCHA_API_KEYS', '')
+        bocha_keys_str = get_clean_env('BOCHA_API_KEYS')
         bocha_api_keys = [k.strip() for k in bocha_keys_str.split(',') if k.strip()]
         
-        tavily_keys_str = os.getenv('TAVILY_API_KEYS', '')
+        tavily_keys_str = get_clean_env('TAVILY_API_KEYS')
         tavily_api_keys = [k.strip() for k in tavily_keys_str.split(',') if k.strip()]
         
-        serpapi_keys_str = os.getenv('SERPAPI_API_KEYS', '')
+        serpapi_keys_str = get_clean_env('SERPAPI_API_KEYS')
         serpapi_keys = [k.strip() for k in serpapi_keys_str.split(',') if k.strip()]
         
         return cls(
             stock_list=stock_list,
-            feishu_app_id=os.getenv('FEISHU_APP_ID'),
-            feishu_app_secret=os.getenv('FEISHU_APP_SECRET'),
-            feishu_folder_token=os.getenv('FEISHU_FOLDER_TOKEN'),
-            tushare_token=os.getenv('TUSHARE_TOKEN'),
-            gemini_api_key=os.getenv('GEMINI_API_KEY'),
-            gemini_model=os.getenv('GEMINI_MODEL', 'gemini-3-flash-preview'),
-            gemini_model_fallback=os.getenv('GEMINI_MODEL_FALLBACK', 'gemini-2.5-flash'),
-            gemini_request_delay=float(os.getenv('GEMINI_REQUEST_DELAY', '2.0')),
-            gemini_max_retries=int(os.getenv('GEMINI_MAX_RETRIES', '5')),
-            gemini_retry_delay=float(os.getenv('GEMINI_RETRY_DELAY', '5.0')),
-            openai_api_key=os.getenv('OPENAI_API_KEY'),
-            openai_base_url=os.getenv('OPENAI_BASE_URL'),
-            openai_model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+            feishu_app_id=get_clean_env('FEISHU_APP_ID'),
+            feishu_app_secret=get_clean_env('FEISHU_APP_SECRET'),
+            feishu_folder_token=get_clean_env('FEISHU_FOLDER_TOKEN'),
+            tushare_token=get_clean_env('TUSHARE_TOKEN'),
+            gemini_api_key=get_clean_env('GEMINI_API_KEY'),
+            gemini_model=get_clean_env('GEMINI_MODEL', 'gemini-3-flash-preview'),
+            gemini_model_fallback=get_clean_env('GEMINI_MODEL_FALLBACK', 'gemini-2.5-flash'),
+            gemini_request_delay=float(get_clean_env('GEMINI_REQUEST_DELAY', '2.0')),
+            gemini_max_retries=int(get_clean_env('GEMINI_MAX_RETRIES', '5')),
+            gemini_retry_delay=float(get_clean_env('GEMINI_RETRY_DELAY', '5.0')),
+            openai_api_key=get_clean_env('OPENAI_API_KEY'),
+            openai_base_url=get_clean_env('OPENAI_BASE_URL'),
+            openai_model=get_clean_env('OPENAI_MODEL', 'gpt-4o-mini'),
             bocha_api_keys=bocha_api_keys,
             tavily_api_keys=tavily_api_keys,
             serpapi_keys=serpapi_keys,
-            wechat_webhook_url=os.getenv('WECHAT_WEBHOOK_URL'),
-            feishu_webhook_url=os.getenv('FEISHU_WEBHOOK_URL'),
-            telegram_bot_token=os.getenv('TELEGRAM_BOT_TOKEN'),
-            telegram_chat_id=os.getenv('TELEGRAM_CHAT_ID'),
-            email_sender=os.getenv('EMAIL_SENDER'),
-            email_password=os.getenv('EMAIL_PASSWORD'),
-            email_receivers=[r.strip() for r in os.getenv('EMAIL_RECEIVERS', '').split(',') if r.strip()],
-            pushover_user_key=os.getenv('PUSHOVER_USER_KEY'),
-            pushover_api_token=os.getenv('PUSHOVER_API_TOKEN'),
-            custom_webhook_urls=[u.strip() for u in os.getenv('CUSTOM_WEBHOOK_URLS', '').split(',') if u.strip()],
-            custom_webhook_bearer_token=os.getenv('CUSTOM_WEBHOOK_BEARER_TOKEN'),
-            single_stock_notify=os.getenv('SINGLE_STOCK_NOTIFY', 'false').lower() == 'true',
-            feishu_max_bytes=int(os.getenv('FEISHU_MAX_BYTES', '20000')),
-            wechat_max_bytes=int(os.getenv('WECHAT_MAX_BYTES', '4000')),
-            database_path=os.getenv('DATABASE_PATH', './data/stock_analysis.db'),
-            log_dir=os.getenv('LOG_DIR', './logs'),
-            log_level=os.getenv('LOG_LEVEL', 'INFO'),
-            max_workers=int(os.getenv('MAX_WORKERS', '3')),
-            debug=os.getenv('DEBUG', 'false').lower() == 'true',
-            schedule_enabled=os.getenv('SCHEDULE_ENABLED', 'false').lower() == 'true',
-            schedule_time=os.getenv('SCHEDULE_TIME', '18:00'),
-            market_review_enabled=os.getenv('MARKET_REVIEW_ENABLED', 'true').lower() == 'true',
-            webui_enabled=os.getenv('WEBUI_ENABLED', 'false').lower() == 'true',
-            webui_host=os.getenv('WEBUI_HOST', '127.0.0.1'),
-            webui_port=int(os.getenv('WEBUI_PORT', '8000')),
+            wechat_webhook_url=get_clean_env('WECHAT_WEBHOOK_URL'),
+            feishu_webhook_url=get_clean_env('FEISHU_WEBHOOK_URL'),
+            telegram_bot_token=get_clean_env('TELEGRAM_BOT_TOKEN'),
+            telegram_chat_id=get_clean_env('TELEGRAM_CHAT_ID'),
+            email_sender=get_clean_env('EMAIL_SENDER'),
+            email_password=get_clean_env('EMAIL_PASSWORD'),
+            email_receivers=[r.strip() for r in get_clean_env('EMAIL_RECEIVERS').split(',') if r.strip()],
+            pushover_user_key=get_clean_env('PUSHOVER_USER_KEY'),
+            pushover_api_token=get_clean_env('PUSHOVER_API_TOKEN'),
+            custom_webhook_urls=[u.strip() for u in get_clean_env('CUSTOM_WEBHOOK_URLS').split(',') if u.strip()],
+            custom_webhook_bearer_token=get_clean_env('CUSTOM_WEBHOOK_BEARER_TOKEN'),
+            single_stock_notify=get_clean_env('SINGLE_STOCK_NOTIFY', 'false').lower() == 'true',
+            feishu_max_bytes=int(get_clean_env('FEISHU_MAX_BYTES', '20000')),
+            wechat_max_bytes=int(get_clean_env('WECHAT_MAX_BYTES', '4000')),
+            database_path=get_clean_env('DATABASE_PATH', './data/stock_analysis.db'),
+            log_dir=get_clean_env('LOG_DIR', './logs'),
+            log_level=get_clean_env('LOG_LEVEL', 'INFO'),
+            max_workers=int(get_clean_env('MAX_WORKERS', '3')),
+            debug=get_clean_env('DEBUG', 'false').lower() == 'true',
+            schedule_enabled=get_clean_env('SCHEDULE_ENABLED', 'false').lower() == 'true',
+            schedule_time=get_clean_env('SCHEDULE_TIME', '18:00'),
+            market_review_enabled=get_clean_env('MARKET_REVIEW_ENABLED', 'true').lower() == 'true',
+            webui_enabled=get_clean_env('WEBUI_ENABLED', 'false').lower() == 'true',
+            webui_host=get_clean_env('WEBUI_HOST', '127.0.0.1'),
+            webui_port=int(get_clean_env('WEBUI_PORT', '8000')),
         )
     
     @classmethod
