@@ -650,6 +650,7 @@ def render_base(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{html.escape(title)}</title>
   <style>{BASE_CSS}{extra_css}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   {content}
@@ -906,10 +907,50 @@ def render_config_page(
             </div>
             ${resultHtml}
             <div class="task-actions">
+                ${status === 'completed' ? `<button class="task-btn" onclick="event.stopPropagation();exportToPDF('${taskId}', '${code}', '${result.name || ''}')" title="导出PDF">💾</button>` : ''}
                 <button class="task-btn" onclick="event.stopPropagation();removeTask('${taskId}')">×</button>
             </div>
         </div>${detailHtml}`;
     }
+    
+    // 全局函数：导出PDF
+    window.exportToPDF = function(taskId, code, name) {
+        const detailEl = getEl('detail_' + taskId);
+        if (!detailEl) return;
+        
+        // 创建临时容器用于生成PDF
+        const container = document.createElement('div');
+        container.style.padding = '20px';
+        container.style.background = 'white';
+        container.style.color = '#000';
+        
+        // 标题头
+        const title = `<h3>${code} ${name} - 投资分析报告</h3>`;
+        const time = `<div style="color:#666; font-size:0.8rem; margin-bottom:15px;">生成时间: ${new Date().toLocaleString()}</div>`;
+        
+        // 内容 (克隆详情节点，去除隐藏类)
+        const content = detailEl.cloneNode(true);
+        content.style.display = 'block';
+        content.style.maxHeight = 'none';
+        content.style.borderTop = 'none';
+        content.style.paddingTop = '0';
+        
+        container.innerHTML = title + time;
+        container.appendChild(content);
+        
+        // 配置并导出
+        const opt = {
+            margin: 10,
+            filename: `${code}_${name}_分析报告.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        html2pdf().set(opt).from(container).save().then(() => {
+            // 导出完成后无需清理，container未挂载到DOM
+        });
+    };
     
     // 全局函数：切换详情
     window.toggleDetail = function(taskId) {
