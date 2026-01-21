@@ -362,9 +362,7 @@ class GeminiAnalyzer:
     "sell_price": "建议止盈/目标价格（如 '11.80'）",
     "stop_loss_price": "建议止损价格（如 '10.20'）",
     
-    "plain_talk_short": "大白话：短期多少钱买/卖？（例如：'短期就在10块钱左右低吸，涨到11块这就得跑'）",
-    "plain_talk_long": "大白话：长期多少钱买/卖？（例如：'想拿长线的，等跌穿20日线到9.5再接，目标看新高15元'）",
-    
+
     "search_performed": true/false,
     "data_sources": "详细列出数据来源（如：新浪财经、同花顺、公司公告、实时行情API）"
 }
@@ -406,7 +404,7 @@ class GeminiAnalyzer:
 6. **有数可查**：结论必须结合文中给出的具体数据（如“基于MA5金叉”、“乖离率仅1.2%”），严禁空谈
 7. **来源标注**：必须在 data_sources 字段中明确列出分析用到的数据模块（如“实时行情、均线系统、新闻搜索”）
 8. **拒绝偷懒**：遇到无新闻或无财报数据时，必须基于PE/PB、市值、换手率等现有数据进行估值和活跃度分析，**严禁使用'暂无数据'、'无重大消息'等敷衍话术**作为独立段落。
-9. **大白话总结**：**必须填写 plain_talk_short 和 plain_talk_long 字段**。这是用户最关心的部分，通过这两个字段用最通俗易懂的语言（小白能听懂）总结操作建议（如“这两天别买，等回调”），禁止使用“MACD金叉”等术语，只说价格和动作。"""
+8. **拒绝偷懒**：遇到无新闻或无财报数据时，必须基于PE/PB、市值、换手率等现有数据进行估值和活跃度分析，**严禁使用'暂无数据'、'无重大消息'等敷衍话术**作为独立段落。"""
 
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -1110,8 +1108,14 @@ class GeminiAnalyzer:
                 data = json.loads(json_str, strict=False)
                 
                 # 提取 dashboard 数据
-                dashboard = data.get('dashboard', None)
                 
+                # 智能回退：如果字段缺失，尝试从 dashboard 中提取
+                if not data.get('analysis_summary') and dashboard and 'core_conclusion' in dashboard:
+                     data['analysis_summary'] = dashboard.get('core_conclusion', {}).get('one_sentence', '')
+                     
+                if not data.get('risk_warning') and dashboard and 'risk_assessment' in dashboard:
+                     data['risk_warning'] = dashboard.get('risk_assessment', {}).get('main_risk', '')
+
                 # 解析所有字段，使用默认值防止缺失
                 return AnalysisResult(
                     code=code,

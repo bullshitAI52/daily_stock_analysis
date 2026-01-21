@@ -887,27 +887,7 @@ def render_config_page(
 
 
 
-                ${(result.plain_talk_short || result.plain_talk_long) ? `
-                <div style="margin: 20px 0; border-top: 2px dashed #eee; padding-top: 20px;">
-                    <div class="task-detail-block" style="background: linear-gradient(to right, #eff6ff, #ffffff); border-left: 5px solid #2563eb; border-radius: 4px; padding: 15px;">
-                        <h4 style="color: #1e40af; border-bottom: none; margin-bottom: 15px; font-size: 1.1rem; display: flex; align-items: center;">
-                            <span style="font-size: 1.4rem; margin-right: 8px;">🗣️</span> 
-                            深度研报 · 大白话总结
-                        </h4>
-                        
-                        ${result.plain_talk_short ? `
-                        <div style="margin-bottom: 12px; padding: 10px; background: rgba(37, 99, 235, 0.05); border-radius: 6px;">
-                            <div style="font-weight: bold; color: #1d4ed8; margin-bottom: 4px;">⚡️ 短期怎么做？</div>
-                            <div style="color: #333; line-height: 1.6;">${result.plain_talk_short}</div>
-                        </div>` : ''}
-                        
-                        ${result.plain_talk_long ? `
-                        <div style="padding: 10px; background: rgba(37, 99, 235, 0.05); border-radius: 6px;">
-                            <div style="font-weight: bold; color: #1d4ed8; margin-bottom: 4px;">⏳ 长期怎么拿？</div>
-                            <div style="color: #333; line-height: 1.6;">${result.plain_talk_long}</div>
-                        </div>` : ''}
-                    </div>
-                </div>` : ''}
+
                 
                 ${result.data_sources ? `
                 <div class="task-detail-footer">
