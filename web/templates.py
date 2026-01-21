@@ -709,13 +709,9 @@ def render_config_page(
     // Export updateButtonState to window so it can be called from outside
     window.updateButtonState = function() {
         const code = codeInput.value.trim().toLowerCase();
-        // 只有当输入框有值时才进行视觉反馈（可选）
+        // 永远保持可用，点击时才校验
+        submitBtn.disabled = false;
     };
-        const code = codeInput.value.trim().toLowerCase();
-        const isAStock = /^\\d{6}$/.test(code);           // A股: 600519
-        const isHKStock = /^hk\\d{5}$/.test(code);        // 港股: hk00700
-        submitBtn.disabled = !(isAStock || isHKStock);
-    }
     
     // 格式化时间
     function formatTime(isoString) {
