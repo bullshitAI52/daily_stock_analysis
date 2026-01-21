@@ -680,15 +680,25 @@ def render_config_page(
     
     // 初始化事件监听
     window.addEventListener('load', function() {
-        const codeInput = getEl('analysis_code');
-        if (codeInput) {
-            codeInput.addEventListener('input', function(e) {
-                this.value = this.value.toLowerCase().replace(/[^a-z0-9]/g, '');
-                if (this.value.length > 8) this.value = this.value.slice(0, 8);
+        // A股输入框
+        const inputA = getEl('code_a');
+        if (inputA) {
+            inputA.addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '').slice(0, 6);
             });
-            
-            codeInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') submitAnalysis();
+            inputA.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') submitAnalysis('a');
+            });
+        }
+        
+        // 港股输入框
+        const inputHK = getEl('code_hk');
+        if (inputHK) {
+            inputHK.addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '').slice(0, 5);
+            });
+            inputHK.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') submitAnalysis('hk');
             });
         }
         
@@ -861,26 +871,50 @@ def render_config_page(
     }
     
     // 全局提交函数
-    window.submitAnalysis = function() {
-        const codeInput = getEl('analysis_code');
-        const submitBtn = getEl('analysis_btn');
+    window.submitAnalysis = function(type) {
+        let codeInput, submitBtn;
+        let code = '';
+        
+        // 根据类型获取元素
+        if (type === 'a') {
+            codeInput = getEl('code_a');
+            submitBtn = getEl('btn_a');
+        } else if (type === 'hk') {
+            codeInput = getEl('code_hk');
+            submitBtn = getEl('btn_hk');
+        } else {
+            console.error('未知类型');
+            return;
+        }
+
         const reportSelect = getEl('report_type');
         
         if (!codeInput || !submitBtn) {
-            alert('页面加载异常，请刷新重试');
+            alert('页面控件加载失败，请刷新');
             return;
         }
         
-        const code = codeInput.value.trim().toLowerCase();
-        // 简单校验
-        if (code.length < 4) {
-             alert('请输入正确的股票代码 (如 600519, hk00700, sh000001)');
-             return;
+        const rawValue = codeInput.value.trim();
+        
+        // 校验逻辑
+        if (type === 'a') {
+            if (!/^\d{6}$/.test(rawValue)) {
+                alert('A股代码必须是 6 位数字，如 600519');
+                return;
+            }
+            code = rawValue;
+        } else if (type === 'hk') {
+            if (!/^\d{5}$/.test(rawValue)) {
+                alert('港股代码必须是 5 位数字，如 00700');
+                return;
+            }
+            code = 'hk' + rawValue;
         }
         
         // 视觉反馈
+        const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
-        submitBtn.textContent = '提交中...';
+        submitBtn.textContent = '⏳';
         
         const reportType = reportSelect ? reportSelect.value : 'simple';
         
@@ -902,7 +936,7 @@ def render_config_page(
                     openDetails.add(data.task_id); // 自动展开
                     renderAllTasks();
                     startPolling();
-                    codeInput.value = '';
+                    codeInput.value = ''; // 清空输入
                     
                     // 立即轮询一次
                     setTimeout(() => {
@@ -917,7 +951,7 @@ def render_config_page(
             })
             .finally(() => {
                 submitBtn.disabled = false;
-                submitBtn.textContent = '🚀 分析';
+                submitBtn.textContent = originalText;
             });
     };
 </script>
@@ -928,24 +962,51 @@ def render_config_page(
     <h2>📈 A/H股分析</h2>
     
     <!-- 快速分析区域 -->
+    <!-- 快速分析区域 -->
     <div class="analysis-section" style="margin-top: 0; padding-top: 0; border-top: none;">
-      <div class="form-group" style="margin-bottom: 0.75rem;">
+      
+      <!-- A股 -->
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="font-size: 0.9rem; color: var(--text-light);">🇨🇳 A股</label>
         <div class="input-group">
           <input 
               type="text" 
-              id="analysis_code" 
-              placeholder="A股 600519 / 港股 hk00700"
-              maxlength="8"
+              id="code_a" 
+              placeholder="输入6位代码 (如 600519)"
+              maxlength="6"
               autocomplete="off"
+              style="font-size: 1rem;"
           />
-          <select id="report_type" class="report-select" title="选择报告类型">
-            <option value="simple">📝 精简报告</option>
-            <option value="full">📊 完整报告</option>
-          </select>
-          <button type="button" id="analysis_btn" class="btn-analysis" onclick="submitAnalysis()">
+          <button type="button" id="btn_a" class="btn-analysis" onclick="submitAnalysis('a')">
             🚀 分析
           </button>
         </div>
+      </div>
+
+      <!-- 港股 -->
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label style="font-size: 0.9rem; color: var(--text-light);">🇭🇰 港股</label>
+        <div class="input-group">
+          <input 
+              type="text" 
+              id="code_hk" 
+              placeholder="输入5位代码 (如 00700)"
+              maxlength="5"
+              autocomplete="off"
+              style="font-size: 1rem;"
+          />
+          <button type="button" id="btn_hk" class="btn-analysis" style="background-color: #8b5cf6;" onclick="submitAnalysis('hk')">
+            🛸 分析
+          </button>
+        </div>
+      </div>
+      
+      <!-- 选项 -->
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <select id="report_type" class="report-select" style="width: 100%; text-align: center;" title="选择报告类型">
+            <option value="simple">📝 精简报告 (默认)</option>
+            <option value="full">📊 完整报告 (耗时较长)</option>
+        </select>
       </div>
       
       <!-- 任务列表 -->
