@@ -861,19 +861,19 @@ def render_config_page(
                     </div>
                 </div>` : ''}
 
-                ${(task.report_type !== 'plain' && result.technical_analysis) ? `
+                ${result.technical_analysis ? `
                 <div class="task-detail-block">
                     <h4>📊 技术面分析</h4>
                     <div class="task-detail-text">${(result.technical_analysis || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
 
-                ${(task.report_type !== 'plain' && result.fundamental_analysis) ? `
+                ${result.fundamental_analysis ? `
                 <div class="task-detail-block">
                     <h4>🏢 基本面分析</h4>
                     <div class="task-detail-text">${(result.fundamental_analysis || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
 
-                ${(task.report_type !== 'plain' && result.news_summary) ? `
+                ${result.news_summary ? `
                 <div class="task-detail-block">
                     <h4>📰 消息面摘要</h4>
                     <div class="task-detail-text">${(result.news_summary || '').replace(/\\n/g, '<br>')}</div>
@@ -885,19 +885,28 @@ def render_config_page(
                     <div class="task-detail-text">${(result.risk_warning || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
 
+                </div>` : ''}
+
                 ${(result.plain_talk_short || result.plain_talk_long) ? `
-                <div class="task-detail-block" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px;">
-                    <h4 style="color: #2563eb; border-bottom: none; margin-bottom: 5px;">🗣️ 省流大白话</h4>
-                    ${result.plain_talk_short ? `
-                    <div style="margin-bottom: 8px;">
-                        <span style="font-weight: bold; color: #1e40af; font-size: 0.85rem;">⚡️ 短期操作：</span>
-                        <span style="color: #1e3a8a; font-size: 0.9rem;">${result.plain_talk_short}</span>
-                    </div>` : ''}
-                    ${result.plain_talk_long ? `
-                    <div>
-                        <span style="font-weight: bold; color: #1e40af; font-size: 0.85rem;">⏳ 长期部署：</span>
-                        <span style="color: #1e3a8a; font-size: 0.9rem;">${result.plain_talk_long}</span>
-                    </div>` : ''}
+                <div style="margin: 20px 0; border-top: 2px dashed #eee; padding-top: 20px;">
+                    <div class="task-detail-block" style="background: linear-gradient(to right, #eff6ff, #ffffff); border-left: 5px solid #2563eb; border-radius: 4px; padding: 15px;">
+                        <h4 style="color: #1e40af; border-bottom: none; margin-bottom: 15px; font-size: 1.1rem; display: flex; align-items: center;">
+                            <span style="font-size: 1.4rem; margin-right: 8px;">🗣️</span> 
+                            深度研报 · 大白话总结
+                        </h4>
+                        
+                        ${result.plain_talk_short ? `
+                        <div style="margin-bottom: 12px; padding: 10px; background: rgba(37, 99, 235, 0.05); border-radius: 6px;">
+                            <div style="font-weight: bold; color: #1d4ed8; margin-bottom: 4px;">⚡️ 短期怎么做？</div>
+                            <div style="color: #333; line-height: 1.6;">${result.plain_talk_short}</div>
+                        </div>` : ''}
+                        
+                        ${result.plain_talk_long ? `
+                        <div style="padding: 10px; background: rgba(37, 99, 235, 0.05); border-radius: 6px;">
+                            <div style="font-weight: bold; color: #1d4ed8; margin-bottom: 4px;">⏳ 长期怎么拿？</div>
+                            <div style="color: #333; line-height: 1.6;">${result.plain_talk_long}</div>
+                        </div>` : ''}
+                    </div>
                 </div>` : ''}
                 
                 ${result.data_sources ? `
@@ -1165,7 +1174,6 @@ def render_config_page(
         <select id="report_type" class="report-select" style="width: 100%; text-align: center;" title="选择报告类型">
             <option value="full" selected>📊 完整报告 (默认)</option>
             <option value="simple">📝 精简报告 (极速)</option>
-            <option value="plain">🗣️ 大白话报告 (小白专用)</option>
         </select>
       </div>
       
