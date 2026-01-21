@@ -44,6 +44,9 @@ class Config:
     gemini_model: str = "gemini-3-flash-preview"  # 主模型
     gemini_model_fallback: str = "gemini-2.5-flash"  # 备选模型
     
+    # AI 提供商选择: 'gemini' 或 'openai'
+    ai_provider: str = "gemini"
+    
     # Gemini API 请求配置（防止 429 限流）
     gemini_request_delay: float = 2.0  # 请求间隔（秒）
     gemini_max_retries: int = 5  # 最大重试次数
