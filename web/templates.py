@@ -768,7 +768,7 @@ def render_config_page(
             
             detailHtml = '<div class="' + detailClass + '" id="detail_' + taskId + '">' +
                 '<div class="task-detail-row"><span class="label">趋势</span><span>' + (result.trend_prediction || '-') + '</span></div>' +
-                (result.analysis_summary ? '<div class="task-detail-summary">' + result.analysis_summary.substring(0, 100) + '...</div>' : '') +
+                (result.analysis_summary ? '<div class="task-detail-summary">' + result.analysis_summary.replace(/\n/g, '<br>') + '</div>' : '') +
                 '</div>';
         }
         
