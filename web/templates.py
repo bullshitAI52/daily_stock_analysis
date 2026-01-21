@@ -828,6 +828,25 @@ def render_config_page(
                     <div class="task-detail-summary">${cleanSummary}</div>
                 </div>
 
+                ${(result.buy_price && result.sell_price) ? `
+                <div class="task-detail-block" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <h4 style="color: #10b981;">🎯 交易计划</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div style="text-align: center; padding: 5px; background: rgba(16, 185, 129, 0.1); border-radius: 4px;">
+                            <div style="font-size: 0.8rem; color: #059669;">买入区间</div>
+                            <div style="font-weight: bold; color: #059669;">${result.buy_price}</div>
+                        </div>
+                         <div style="text-align: center; padding: 5px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">
+                            <div style="font-size: 0.8rem; color: #dc2626;">止损价格</div>
+                            <div style="font-weight: bold; color: #dc2626;">${result.stop_loss_price || '-'}</div>
+                        </div>
+                        <div style="text-align: center; padding: 5px; background: rgba(245, 158, 11, 0.1); border-radius: 4px;">
+                            <div style="font-size: 0.8rem; color: #d97706;">目标止盈</div>
+                            <div style="font-weight: bold; color: #d97706;">${result.sell_price}</div>
+                        </div>
+                    </div>
+                </div>` : ''}
+
                 ${result.technical_analysis ? `
                 <div class="task-detail-block">
                     <h4>📊 技术面分析</h4>

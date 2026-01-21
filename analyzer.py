@@ -343,6 +343,10 @@ class GeminiAnalyzer:
     "market_sentiment": "当前市场情绪评分（0-100）与解读",
     "hot_topics": "关联题材与热点概念",
     
+    "buy_price": "建议买入价格区间（精确到具体数字，如 '10.50-10.60'）",
+    "sell_price": "建议止盈/目标价格（如 '11.80'）",
+    "stop_loss_price": "建议止损价格（如 '10.20'）",
+    
     "search_performed": true/false,
     "data_sources": "详细列出数据来源（如：新浪财经、同花顺、公司公告、实时行情API）"
 }
