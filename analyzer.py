@@ -329,22 +329,22 @@ class GeminiAnalyzer:
     "risk_warning": "风险提示",
     "buy_reason": "操作理由，引用交易理念",
     
-    "trend_analysis": "走势形态分析",
-    "short_term_outlook": "短期1-3日展望",
-    "medium_term_outlook": "中期1-2周展望",
-    "technical_analysis": "技术面综合分析",
-    "ma_analysis": "均线系统分析",
-    "volume_analysis": "量能分析",
-    "pattern_analysis": "K线形态分析",
-    "fundamental_analysis": "基本面分析",
-    "sector_position": "板块行业分析",
-    "company_highlights": "公司亮点/风险",
-    "news_summary": "新闻摘要",
-    "market_sentiment": "市场情绪",
-    "hot_topics": "相关热点",
+    "trend_analysis": "走势形态深度分析（结合均线、K线形态详细推演）",
+    "short_term_outlook": "短期1-3日具体走势预测（看涨/看跌/震荡区间）",
+    "medium_term_outlook": "中期1-2周趋势展望",
+    "technical_analysis": "技术面深度分析（不少于150字，必须包含：MACD/KDJ指标状态、均线支撑压力位具体数值、成交量配合情况。严禁只写'指标走强'等空话）",
+    "ma_analysis": "均线系统详细解读",
+    "volume_analysis": "量价关系深度分析",
+    "pattern_analysis": "K线组合形态识别",
+    "fundamental_analysis": "基本面深度评估（基于PE/PB/市值/行业地位进行分析。即使无最新财报，也必须分析估值水平和行业前景，严禁写'暂无数据'）",
+    "sector_position": "板块行业分析（该股在行业中的地位）",
+    "company_highlights": "公司核心亮点与潜在风险",
+    "news_summary": "舆情情报详细摘要（列出具体新闻标题、事件和时间。这部分非常重要，必须详细展开，不可一笔带过）",
+    "market_sentiment": "当前市场情绪评分（0-100）与解读",
+    "hot_topics": "关联题材与热点概念",
     
     "search_performed": true/false,
-    "data_sources": "数据来源说明"
+    "data_sources": "详细列出数据来源（如：新浪财经、同花顺、公司公告、实时行情API）"
 }
 ```
 
@@ -382,7 +382,8 @@ class GeminiAnalyzer:
 4. **检查清单可视化**：用 ✅⚠️❌ 明确显示每项检查结果
 5. **风险优先级**：舆情中的风险点要醒目标出
 6. **有数可查**：结论必须结合文中给出的具体数据（如“基于MA5金叉”、“乖离率仅1.2%”），严禁空谈
-7. **来源标注**：必须在 data_sources 字段中明确列出分析用到的数据模块（如“实时行情、均线系统、新闻搜索”）"""
+7. **来源标注**：必须在 data_sources 字段中明确列出分析用到的数据模块（如“实时行情、均线系统、新闻搜索”）
+8. **拒绝偷懒**：遇到无新闻或无财报数据时，必须基于PE/PB、市值、换手率等现有数据进行估值和活跃度分析，**严禁使用'暂无数据'、'无重大消息'等敷衍话术**作为独立段落。"""
 
     def __init__(self, api_key: Optional[str] = None):
         """
