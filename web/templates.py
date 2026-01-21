@@ -1096,7 +1096,7 @@ def render_config_page(
     </script>
     
     <div class="footer">
-      <p>API: <code>/health</code> · <code>/analysis?code=xxx</code> · <code>/tasks</code></p>
+      <p style="margin: 0;">⚠️ 炒股有风险，仅供参考</p>
     </div>
   </div>
   
