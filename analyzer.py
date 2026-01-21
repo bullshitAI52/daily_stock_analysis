@@ -95,6 +95,15 @@ class AnalysisResult:
     risk_warning: str = ""  # 风险提示
     buy_reason: str = ""  # 买入/卖出理由
     
+    # ========== 交易计划 ==========
+    buy_price: str = ""  # 建议买入价
+    sell_price: str = ""  # 建议卖出价
+    stop_loss_price: str = ""  # 建议止损价
+    
+    # ========== 大白话总结 ==========
+    plain_talk_short: str = ""  # 短期大白话
+    plain_talk_long: str = ""  # 长期大白话
+    
     # ========== 元数据 ==========
     raw_response: Optional[str] = None  # 原始响应（调试用）
     search_performed: bool = False  # 是否执行了联网搜索
@@ -129,6 +138,12 @@ class AnalysisResult:
             'key_points': self.key_points,
             'risk_warning': self.risk_warning,
             'buy_reason': self.buy_reason,
+            'buy_price': self.buy_price,
+            'sell_price': self.sell_price,
+            'stop_loss_price': self.stop_loss_price,
+            'plain_talk_short': self.plain_talk_short,
+            'plain_talk_long': self.plain_talk_long,
+            'data_sources': self.data_sources,
             'search_performed': self.search_performed,
             'success': self.success,
             'error_message': self.error_message,
@@ -1130,6 +1145,13 @@ class GeminiAnalyzer:
                     key_points=data.get('key_points', ''),
                     risk_warning=data.get('risk_warning', ''),
                     buy_reason=data.get('buy_reason', ''),
+                    # 交易计划
+                    buy_price=data.get('buy_price', ''),
+                    sell_price=data.get('sell_price', ''),
+                    stop_loss_price=data.get('stop_loss_price', ''),
+                    # 大白话总结
+                    plain_talk_short=data.get('plain_talk_short', ''),
+                    plain_talk_long=data.get('plain_talk_long', ''),
                     # 元数据
                     search_performed=data.get('search_performed', False),
                     data_sources=data.get('data_sources', '技术面数据'),
