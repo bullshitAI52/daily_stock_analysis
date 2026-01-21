@@ -861,19 +861,19 @@ def render_config_page(
                     </div>
                 </div>` : ''}
 
-                ${result.technical_analysis ? `
+                ${(task.report_type !== 'plain' && result.technical_analysis) ? `
                 <div class="task-detail-block">
                     <h4>📊 技术面分析</h4>
                     <div class="task-detail-text">${(result.technical_analysis || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
 
-                ${result.fundamental_analysis ? `
+                ${(task.report_type !== 'plain' && result.fundamental_analysis) ? `
                 <div class="task-detail-block">
                     <h4>🏢 基本面分析</h4>
                     <div class="task-detail-text">${(result.fundamental_analysis || '').replace(/\\n/g, '<br>')}</div>
                 </div>` : ''}
 
-                ${result.news_summary ? `
+                ${(task.report_type !== 'plain' && result.news_summary) ? `
                 <div class="task-detail-block">
                     <h4>📰 消息面摘要</h4>
                     <div class="task-detail-text">${(result.news_summary || '').replace(/\\n/g, '<br>')}</div>
@@ -1165,6 +1165,7 @@ def render_config_page(
         <select id="report_type" class="report-select" style="width: 100%; text-align: center;" title="选择报告类型">
             <option value="full" selected>📊 完整报告 (默认)</option>
             <option value="simple">📝 精简报告 (极速)</option>
+            <option value="plain">🗣️ 大白话报告 (小白专用)</option>
         </select>
       </div>
       
