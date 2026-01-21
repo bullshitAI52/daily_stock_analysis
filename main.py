@@ -215,7 +215,7 @@ class StockAnalysisPipeline:
             logger.error(f"[{code}] {error_msg}")
             return False, error_msg
     
-    def analyze_stock(self, code: str) -> Optional[AnalysisResult]:
+    def analyze_stock(self, code: str, report_type: ReportType = ReportType.SIMPLE) -> Optional[AnalysisResult]:
         """
         分析单只股票（增强版：含量比、换手率、筹码分析、多维度情报）
         
@@ -280,10 +280,17 @@ class StockAnalysisPipeline:
             except Exception as e:
                 logger.warning(f"[{code}] 趋势分析失败: {e}")
             
-            # Step 4: 多维度情报搜索（最新消息+风险排查+业绩预期）
+            # Step 4: 多维度情报搜索（仅在完整报告模式下进行）
             news_context = None
-            if self.search_service.is_available:
-                logger.info(f"[{code}] 开始多维度情报搜索...")
+            
+            # 只有完整报告才进行搜索（耗时操作）
+            do_search = (
+                self.search_service.is_available and 
+                report_type == ReportType.FULL
+            )
+            
+            if do_search:
+                logger.info(f"[{code}] 开始多维度情报搜索 (模式: FULl)...")
                 
                 # 使用多维度搜索（最多3次搜索）
                 intel_results = self.search_service.search_comprehensive_intel(
@@ -465,7 +472,7 @@ class StockAnalysisPipeline:
                 logger.info(f"[{code}] 跳过 AI 分析（dry-run 模式）")
                 return None
             
-            result = self.analyze_stock(code)
+            result = self.analyze_stock(code, report_type=report_type)
             
             if result:
                 logger.info(
