@@ -726,6 +726,11 @@ class SearchService:
                 'desc': '业绩预期'
             },
             {
+                'name': 'policy_macro',
+                'query': f"{stock_name} 行业政策 宏观利好 国家规划 监管",
+                'desc': '政策宏观'
+            },
+            {
                 'name': 'industry_analysis',
                 'query': f"{stock_name} 行业地位 竞争对手 市场份额",
                 'desc': '行业分析'

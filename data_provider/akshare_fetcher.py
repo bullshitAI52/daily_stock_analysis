@@ -959,9 +959,26 @@ class AkshareFetcher(BaseFetcher):
             df = ak.stock_financial_abstract(symbol=stock_code)
             if df is None or df.empty:
                 return {}
-            # 取最新一期
-            latest = df.iloc[-1].to_dict()
-            return latest
+            
+            # 数据结构通常是：指标, 20241231, 20240930 ...
+            # 需要找到最近的一个日期列
+            date_columns = [c for c in df.columns if c not in ['指标', '选项', '序号']]
+            if not date_columns:
+                return {}
+            
+            # 排序找到最近日期
+            latest_date = sorted(date_columns, reverse=True)[0]
+            
+            # 构建字典: {指标名称: 数值}
+            # 过滤出该日期列的数据
+            result = {}
+            for _, row in df.iterrows():
+                indicator = row.get('指标')
+                value = row.get(latest_date)
+                if indicator and pd.notna(value):
+                    result[indicator] = value
+                    
+            return result
         except Exception as e:
             logger.warning(f"获取财务摘要失败: {e}")
             return {}
@@ -989,20 +1006,46 @@ class AkshareFetcher(BaseFetcher):
     def get_company_info(self, stock_code: str) -> Dict[str, Any]:
         """
         获取上市公司基本信息
-        数据来源: ak.stock_individual_info_em
+        组合数据来源:
+        1. ak.stock_individual_info_em (行业, 市值)
+        2. ak.stock_profile_cn_em (主营业务)
         """
         import akshare as ak
+        info_dict = {}
+        
+        # 1. 获取行业和市值信息
         try:
             self._set_random_user_agent()
             df = ak.stock_individual_info_em(symbol=stock_code)
-            if df is None or df.empty:
-                return {}
-            # 转为字典: item->value
-            info_dict = dict(zip(df['item'], df['value']))
-            return info_dict
+            if df is not None and not df.empty:
+                # 尝试处理 item-value 格式 (常见格式)
+                if 'item' in df.columns and 'value' in df.columns:
+                    data = dict(zip(df['item'], df['value']))
+                    info_dict['所属行业'] = data.get('行业')
+                    info_dict['上市日期'] = data.get('上市时间')
+                    info_dict['总市值'] = data.get('总市值')
+                    info_dict['流通市值'] = data.get('流通市值')
+                # 尝试处理单行 wide 格式
+                elif len(df) >= 1:
+                    row = df.iloc[0].to_dict()
+                    info_dict['所属行业'] = row.get('行业')
+                    info_dict['上市日期'] = row.get('上市时间')
+                    info_dict['总市值'] = row.get('总市值')
+                    info_dict['流通市值'] = row.get('流通市值')
         except Exception as e:
-            logger.warning(f"获取公司信息失败: {e}")
-            return {}
+            logger.warning(f"获取基础信息失败: {e}")
+            
+        # 2. 获取主营业务 (简介) - 暂时移除不稳定接口
+        # try:
+        #     import time
+        #     time.sleep(1)
+        #     self._set_random_user_agent()
+        #     df_profile = ak.stock_profile_cn_em(symbol=stock_code)
+        #     # ...
+        # except Exception as e:
+        #     logger.warning(f"获取主营业务失败: {e}")
+            
+        return info_dict
 
 
 if __name__ == "__main__":
