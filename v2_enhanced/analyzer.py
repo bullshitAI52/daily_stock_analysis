@@ -96,10 +96,16 @@ class AnalysisResult:
     risk_warning: str = ''  # 风险提示
     buy_reason: str = ""  # 买入/卖出理由
     
-    # ========== 交易计划 ==========
-    buy_price: str = ""  # 建议买入价
-    sell_price: str = ""  # 建议卖出价
+    # ========== 交易计划 - 增强版 ==========
+    buy_price: str = ""  # 兼容旧字段
+    sell_price: str = ""  # 兼容旧字段
     stop_loss_price: str = ""  # 建议止损价
+    
+    # 新增：明确的期限价格
+    short_term_buy: str = ""
+    short_term_sell: str = ""
+    long_term_buy: str = ""
+    long_term_sell: str = ""
     
     # ========== 大白话总结 ==========
     plain_talk_short: str = ""  # 短期大白话
@@ -966,10 +972,14 @@ class GeminiAnalyzer:
             "positive_catalysts": ["利好1(如业绩预增/政策)", "利好2"]
         }},
         "battle_plan": {{
-            "sniper_points": {{
-                "ideal_buy": "买入价（具体数字）",
-                "stop_loss": "止损价（具体数字）",
-                "take_profit": "目标价（具体数字）"
+            "short_term": {{
+                "buy": "短期买入价（具体数字）",
+                "sell": "短期卖出价（具体数字）",
+                "stop_loss": "止损价（具体数字）"
+            }},
+            "long_term": {{
+                "buy": "中长期配置价（具体数字/分批建仓区间）",
+                "sell": "中长期目标价（具体数字）"
             }}
         }}
     }},
@@ -1087,10 +1097,16 @@ class GeminiAnalyzer:
                     key_points=data.get('key_points', ''),
                     risk_warning=data.get('risk_warning', ''),
                     buy_reason=data.get('buy_reason', ''),
-                    # 交易计划
-                    buy_price=data.get('buy_price', ''),
-                    sell_price=data.get('sell_price', ''),
-                    stop_loss_price=data.get('stop_loss_price', ''),
+                    # 交易计划 (解析新结构)
+                    buy_price=data.get('battle_plan', {}).get('short_term', {}).get('buy', '') or data.get('buy_price', ''),
+                    sell_price=data.get('battle_plan', {}).get('short_term', {}).get('sell', '') or data.get('sell_price', ''),
+                    stop_loss_price=data.get('battle_plan', {}).get('short_term', {}).get('stop_loss', '') or data.get('stop_loss_price', ''),
+                    
+                    short_term_buy=data.get('battle_plan', {}).get('short_term', {}).get('buy', ''),
+                    short_term_sell=data.get('battle_plan', {}).get('short_term', {}).get('sell', ''),
+                    long_term_buy=data.get('battle_plan', {}).get('long_term', {}).get('buy', ''),
+                    long_term_sell=data.get('battle_plan', {}).get('long_term', {}).get('sell', ''),
+
                     # 大白话总结
                     plain_talk_short=data.get('plain_talk_short', ''),
                     plain_talk_long=data.get('plain_talk_long', ''),
@@ -1149,32 +1165,84 @@ class GeminiAnalyzer:
         name: str
     ) -> AnalysisResult:
         """从纯文本响应中尽可能提取分析信息"""
-        # 尝试识别关键词来判断情绪
+        import re
+        
+        # 0. 尝试使用正则从看似 JSON 的文本中提取关键信息
+        # 这通常发生在 JSON 格式轻微错误导致 json.loads 失败时
         sentiment_score = 50
         trend = '震荡'
         advice = '持有'
+        summary = ''
         
-        text_lower = response_text.lower()
+        # 提取评分
+        score_match = re.search(r'"sentiment_score":\s*(\d+)', response_text)
+        if score_match:
+            sentiment_score = int(score_match.group(1))
+            
+        # 提取趋势
+        trend_match = re.search(r'"trend_prediction":\s*"([^"]+)"', response_text)
+        if trend_match:
+            trend = trend_match.group(1)
+            
+        # 提取建议
+        advice_match = re.search(r'"operation_advice":\s*"([^"]+)"', response_text)
+        if advice_match:
+            advice = advice_match.group(1)
+            
+        # 提取核心结论 (尝试多种可能的键名)
+        summary_match = re.search(r'"one_sentence":\s*"([^"]+)"', response_text)
+        if not summary_match:
+            summary_match = re.search(r'"analysis_summary":\s*"([^"]+)"', response_text)
+            
+        if summary_match:
+            summary = summary_match.group(1)
+        else:
+            # 如果没提取到 JSON 字段，使用文本分析回退
+            
+            # 截取前500字符作为摘要，但过滤掉 JSON 结构符号
+            clean_text = re.sub(r'["{}\[\],]', '', response_text[:500])
+            # 移除键名
+            clean_text = re.sub(r'\w+:', '', clean_text)
+            # 压缩空白
+            summary = re.sub(r'\s+', ' ', clean_text).strip()
+            if len(summary) < 10: # 如果清理后太短，还是用原来的但截断
+                 summary = response_text[:200]
         
-        # 简单的情绪识别
-        positive_keywords = ['看多', '买入', '上涨', '突破', '强势', '利好', '加仓', 'bullish', 'buy']
-        negative_keywords = ['看空', '卖出', '下跌', '跌破', '弱势', '利空', '减仓', 'bearish', 'sell']
+        # 如果还没提取到评分，使用关键词分析
+        if sentiment_score == 50 and not score_match:
+            text_lower = response_text.lower()
+            positive_keywords = ['看多', '买入', '上涨', '突破', '强势', '利好', '加仓', 'bullish', 'buy']
+            negative_keywords = ['看空', '卖出', '下跌', '跌破', '弱势', '利空', '减仓', 'bearish', 'sell']
+            
+            positive_count = sum(1 for kw in positive_keywords if kw in text_lower)
+            negative_count = sum(1 for kw in negative_keywords if kw in text_lower)
+            
+            if positive_count > negative_count + 1:
+                sentiment_score = 65
+                trend = '看多'
+                advice = '买入'
+            elif negative_count > positive_count + 1:
+                sentiment_score = 35
+                trend = '看空'
+                advice = '卖出'
         
-        positive_count = sum(1 for kw in positive_keywords if kw in text_lower)
-        negative_count = sum(1 for kw in negative_keywords if kw in text_lower)
-        
-        if positive_count > negative_count + 1:
-            sentiment_score = 65
-            trend = '看多'
-            advice = '买入'
-        elif negative_count > positive_count + 1:
-            sentiment_score = 35
-            trend = '看空'
-            advice = '卖出'
-        
-        # 截取前500字符作为摘要
-        summary = response_text[:500] if response_text else '无分析结果'
-        
+        # 构建一个替代的详细报告
+        fallback_report = f"""# {name}({code}) 投资分析报告
+
+> ⚠️ 注意：本次分析结果由系统从原始响应中提取，可能不包含完整细节。
+
+## 1. 核心结论
+- **综合评分**: {sentiment_score}分
+- **趋势预判**: {trend}
+- **操作建议**: {advice}
+
+## 2. 分析摘要
+{summary}
+
+## 3. 详细内容
+(由于格式解析限制，无法展示结构化详情，请参考上述摘要或重新运行分析)
+"""
+
         return AnalysisResult(
             code=code,
             name=name,
@@ -1183,10 +1251,8 @@ class GeminiAnalyzer:
             operation_advice=advice,
             confidence_level='低',
             analysis_summary=summary,
-            key_points='JSON解析失败，仅供参考',
-            risk_warning='分析结果可能不准确，建议结合其他信息判断',
-            raw_response=response_text,
-            success=True,
+            detailed_analysis=fallback_report,
+            success=True
         )
     
     def batch_analyze(

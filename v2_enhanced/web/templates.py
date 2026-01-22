@@ -571,6 +571,8 @@ button:active {
     font-size: 0.75rem;
     border: 1px solid var(--border);
     border-top: none;
+    max-height: 600px;
+    overflow-y: auto;
 }
 
 .task-detail.show {
@@ -615,7 +617,8 @@ button:active {
     line-height: 1.5;
     color: #334155;
     white-space: pre-wrap;
-    word-break: break-all;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .task-detail-block.warning .task-detail-text {
@@ -1007,23 +1010,62 @@ def render_config_page(
             const footerShort = getEl('footer_advice_short');
             const footerLong = getEl('footer_advice_long');
 
+
             if (isShowing) {
                 openDetails.add(taskId);
                 // Update Footer
                 const taskData = tasks.get(taskId);
+                console.log('[Footer] Task data:', taskData);
                 if (taskData && taskData.task && taskData.task.result) {
                     const r = taskData.task.result;
-                    if (r.plain_talk_short || r.plain_talk_long) {
+                    console.log('[Footer] Plain talk short:', r.plain_talk_short);
+                    console.log('[Footer] Plain talk long:', r.plain_talk_long);
+                    if (r.plain_talk_short || r.plain_talk_long || r.short_term_buy || r.long_term_buy) {
                          if(footerDefault) footerDefault.style.display = 'none';
                          if(footerDynamic) footerDynamic.style.display = 'block';
-                         if(footerShort) footerShort.textContent = r.plain_talk_short ? ('⚡️ ' + r.plain_talk_short) : '';
-                         if(footerLong) footerLong.textContent = r.plain_talk_long ? ('⏳ ' + r.plain_talk_long) : '';
+                         
+                         let htmlContent = '';
+                         
+                         // 大白话区域
+                         if (r.plain_talk_short) htmlContent += `<p style="margin: 0 0 4px 0; font-weight: bold; color: #1e40af; font-size: 0.9rem;">⚡️ 短期：${r.plain_talk_short}</p>`;
+                         if (r.plain_talk_long) htmlContent += `<p style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 0.85rem;">⏳ 长期：${r.plain_talk_long}</p>`;
+                         
+                         // 价格点位区域 (如果有)
+                         if (r.short_term_buy || r.long_term_buy) {
+                            htmlContent += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #bfdbfe; font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+                            
+                            // 短期点位
+                            if (r.short_term_buy || r.short_term_sell) {
+                                htmlContent += `<div>
+                                    <div style="color: #64748b; font-size: 0.75rem; margin-bottom: 2px;">⚡️ 短期点位</div>
+                                    <div style="color: #059669;">买: ${r.short_term_buy || '-'}</div>
+                                    <div style="color: #dc2626;">卖: ${r.short_term_sell || '-'}</div>
+                                    ${r.stop_loss_price ? `<div style="color: #991b1b; font-size: 0.75rem;">止损: ${r.stop_loss_price}</div>` : ''}
+                                </div>`;
+                            }
+                            
+                            // 长期点位
+                            if (r.long_term_buy || r.long_term_sell) {
+                                htmlContent += `<div>
+                                    <div style="color: #64748b; font-size: 0.75rem; margin-bottom: 2px;">⏳ 长期点位</div>
+                                    <div style="color: #059669;">买: ${r.long_term_buy || '-'}</div>
+                                    <div style="color: #dc2626;">卖: ${r.long_term_sell || '-'}</div>
+                                </div>`;
+                            }
+                            
+                            htmlContent += `</div>`;
+                         }
+                         
+                         footerDynamic.innerHTML = htmlContent;
+                         console.log('[Footer] Dynamic footer displayed with prices');
+                    } else {
+                         console.log('[Footer] No plain talk data available');
                     }
                 }
             } else {
                 openDetails.delete(taskId);
                 if (openDetails.size === 0) {
-                    if(footerDefault) footerDefault.style.display = 'block';
+                    if(footerDefault) footerDefault.style.display = 'none';
                     if(footerDynamic) footerDynamic.style.display = 'none';
                 }
             }
