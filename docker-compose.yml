@@ -1,7 +1,7 @@
 # ===================================
 # A股自选股智能分析系统 - Docker Compose
 # ===================================
-# 
+#
 # 使用方式:
 #   定时模式: docker-compose up -d
 #   WebUI模式: docker-compose up -d webui
@@ -27,7 +27,6 @@ x-common: &common
 
   environment:
     - TZ=Asia/Shanghai
-
     # 代理设置（如果需要）
     # - http_proxy=http://host.docker.internal:10809
     # - https_proxy=http://host.docker.internal:10809
@@ -49,11 +48,13 @@ services:
   analyzer:
     <<: *common
     container_name: stock-analyzer
+    ports:
+      - "8000:8000"
 
   # WebUI 模式
   webui:
     <<: *common
     container_name: stock-webui
-    command: ["python", "main.py", "--webui-only"]
+    command: [ "python", "main.py", "--webui-only" ]
     ports:
       - "8000:8000"
