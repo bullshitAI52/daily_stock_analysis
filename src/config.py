@@ -157,7 +157,15 @@ class Config:
         3. 代码中的默认值
         """
         # 加载项目根目录下的 .env 文件
+        # 优先尝试当前目录（Docker环境/生产环境）
         env_path = Path(__file__).parent / '.env'
+        
+        # 如果当前目录没有，尝试上级目录（本地开发环境，config.py 在 src/ 下）
+        if not env_path.exists():
+            parent_env = Path(__file__).parent.parent / '.env'
+            if parent_env.exists():
+                env_path = parent_env
+                
         load_dotenv(dotenv_path=env_path)
         
         def get_clean_env(key: str, default: str = '') -> str:
