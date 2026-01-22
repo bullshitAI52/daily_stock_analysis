@@ -490,48 +490,54 @@ class StockAnalysisPipeline:
                     f"评分 {result.sentiment_score}"
                 )
                 
-                # 保存完整版深度分析报告（如果有）
-                if hasattr(result, 'detailed_analysis') and result.detailed_analysis:
-                    try:
-                        date_str = datetime.now().strftime('%Y%m%d')
-                        report_dir = Path("reports")
-                        report_dir.mkdir(parents=True, exist_ok=True)
-                        
-                        detail_file = report_dir / f"detail_{code}_{date_str}.md"
-                        
-                        # 组合完整报告内容
-                        full_content = f"# {result.name}({code}) 深度研究报告\n"
-                        full_content += f"日期: {date_str}\n\n"
-                        full_content += result.detailed_analysis
-                        
-                        detail_file.write_text(full_content, encoding='utf-8')
-                        logger.info(f"[{code}] 深度分析报告已保存: {detail_file}")
-                    except Exception as e:
-                        logger.warning(f"[{code}] 保存深度报告失败: {e}")
-                
-                # 生成精简日报内容
+                # 生成并保存报告
                 try:
+                    date_str = datetime.now().strftime('%Y%m%d')
+                    report_dir = Path("reports")
+                    report_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    report_content = "" # 用于推送的内容
+
                     # 根据报告类型选择生成方法
                     if report_type == ReportType.FULL:
-                        # 完整报告：使用决策仪表盘格式
-                        report_content = self.notifier.generate_dashboard_report([result])
-                        logger.info(f"[{code}] 生成完整报告格式成功")
-                    else:
-                        # 精简报告：使用单股报告格式（默认）
-                        report_content = self.notifier.generate_single_stock_report(result)
-                        logger.info(f"[{code}] 生成精简报告格式成功")
-                    
-                    # 保存精简日报到文件
-                    try:
-                        date_str = datetime.now().strftime('%Y%m%d')
-                        report_dir = Path("reports")
-                        report_dir.mkdir(parents=True, exist_ok=True)
+                        # 完整报告：生成决策仪表盘格式 (作为深度报告)
+                        dashboard_content = self.notifier.generate_dashboard_report([result])
                         
+                        # 保存深度报告 --> detail_xxx.md
+                        detail_file = report_dir / f"detail_{code}_{date_str}.md"
+                        try:
+                            detail_file.write_text(dashboard_content, encoding='utf-8')
+                            logger.info(f"[{code}] 深度分析报告已保存: {detail_file}")
+                        except Exception as e:
+                            logger.warning(f"[{code}] 保存深度报告失败: {e}")
+
+                        # 同时生成精简日报 (作为摘要)
+                        simple_content = self.notifier.generate_single_stock_report(result)
                         summary_file = report_dir / f"summary_{code}_{date_str}.md"
-                        summary_file.write_text(report_content, encoding='utf-8')
-                        logger.info(f"[{code}] 极简日报已保存: {summary_file}")
-                    except Exception as e:
-                        logger.warning(f"[{code}] 保存极简日报失败: {e}")
+                        try:
+                            summary_file.write_text(simple_content, encoding='utf-8')
+                            logger.info(f"[{code}] 极简日报已保存: {summary_file}")
+                        except Exception as e:
+                            logger.warning(f"[{code}] 保存极简日报失败: {e}")
+                            
+                        # 推送内容默认使用完整版 (仪表盘)
+                        report_content = dashboard_content
+                        logger.info(f"[{code}] 生成完整报告格式成功")
+                        
+                    else:
+                        # 精简报告：仅生成单股报告 (作为摘要)
+                        simple_content = self.notifier.generate_single_stock_report(result)
+                        
+                        # 保存精简日报 --> summary_xxx.md
+                        summary_file = report_dir / f"summary_{code}_{date_str}.md"
+                        try:
+                            summary_file.write_text(simple_content, encoding='utf-8')
+                            logger.info(f"[{code}] 极简日报已保存: {summary_file}")
+                        except Exception as e:
+                            logger.warning(f"[{code}] 保存极简日报失败: {e}")
+                            
+                        report_content = simple_content
+                        logger.info(f"[{code}] 生成精简报告格式成功")
 
                 except Exception as e:
                     logger.error(f"[{code}] 生成报告内容失败: {e}")

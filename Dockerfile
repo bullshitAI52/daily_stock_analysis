@@ -25,9 +25,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 # 复制应用代码
-COPY *.py ./
-COPY data_provider/ ./data_provider/
-COPY web/ ./web/
+COPY src/ .
 
 # 创建数据目录
 RUN mkdir -p /app/data /app/logs /app/reports

@@ -55,16 +55,6 @@ docker-compose logs -f
 docker-compose ps
 ```
 
-### 4. Customizing WebUI Port
-
-The default WebUI port is `8000`. To change it (e.g., to `8088`), edit `docker-compose.yml`:
-
-```yaml
-  webui:
-    ports:
-      - "8088:8000"  # Change the left side: "YOUR_PORT:8000"
-```
-
 ### 4. 常用管理命令
 
 ```bash

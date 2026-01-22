@@ -400,9 +400,10 @@ class ApiHandler:
         summary_path = Path("reports") / f"summary_{code}_{date_str}.md"
         detail_path = Path("reports") / f"detail_{code}_{date_str}.md"
         
-        if not summary_path.exists() or not detail_path.exists():
+        # 只要有一个文件存在就可以下载
+        if not summary_path.exists() and not detail_path.exists():
             return JsonResponse(
-                {"success": False, "error": "未找到完整报告，请先执行分析"},
+                {"success": False, "error": "未找到任何报告，请先执行分析"},
                 status=HTTPStatus.NOT_FOUND
             )
         
@@ -411,15 +412,19 @@ class ApiHandler:
             zip_buffer = io.BytesIO()
             
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                # 添加 summary
-                zip_file.write(summary_path, f"summary_{code}_{date_str}.md")
+                # 添加 summary (如果存在)
+                if summary_path.exists():
+                    zip_file.write(summary_path, f"summary_{code}_{date_str}.md")
                 
-                # 添加 detail
-                zip_file.write(detail_path, f"detail_{code}_{date_str}.md")
+                # 添加 detail (如果存在)
+                if detail_path.exists():
+                    zip_file.write(detail_path, f"detail_{code}_{date_str}.md")
                 
-                # 生成并添加 plain_talk
-                summary_content = summary_path.read_text(encoding='utf-8')
-                plain_talk_content = f"""# {code} 大白话投资建议
+                # 生成并添加 plain_talk (如果有 summary)
+                if summary_path.exists():
+                    try:
+                        summary_content = summary_path.read_text(encoding='utf-8')
+                        plain_talk_content = f"""# {code} 大白话投资建议
 
 生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -431,7 +436,9 @@ class ApiHandler:
 
 > ⚠️ 风险提示：股市有风险，投资需谨慎。本报告仅供参考，不构成投资建议。
 """
-                zip_file.writestr(f"plain_talk_{code}_{date_str}.md", plain_talk_content)
+                        zip_file.writestr(f"plain_talk_{code}_{date_str}.md", plain_talk_content)
+                    except Exception as e:
+                        logger.warning(f"无法生成大白话报告: {e}")
             
             # 获取 ZIP 内容
             zip_content = zip_buffer.getvalue()

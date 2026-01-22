@@ -26,6 +26,9 @@ os.environ["https_proxy"] = "http://127.0.0.1:10809"
 import argparse
 import logging
 import sys
+import os
+# Add src directory to path
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
 from datetime import datetime, date, timedelta
 from typing import Optional
 
