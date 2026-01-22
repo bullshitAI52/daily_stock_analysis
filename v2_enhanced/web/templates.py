@@ -1208,6 +1208,50 @@ def render_config_page(
                 submitBtn.textContent = originalText;
             });
     };
+    
+    // 一键启动完整分析 (Manual Trigger)
+    window.startFullAnalysis = function() {
+        if (!confirm('确定要立即开始全量分析吗？\\n这将分析列表中的所有股票，可能需要几分钟。')) {
+            return;
+        }
+
+        const btn = getEl('btn_full_analysis');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 正在启动...';
+        }
+
+        fetch('/analysis') // 不带 code 参数即为全量分析
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 使用 Toast 而不是 Alert，体验更好
+                    const toast = document.createElement('div');
+                    toast.className = 'toast show';
+                    toast.innerHTML = '<span class="icon">🚀</span> 全量分析已启动！请留意任务列表';
+                    document.body.appendChild(toast);
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        setTimeout(() => document.body.removeChild(toast), 300);
+                    }, 3000);
+                    
+                    setTimeout(renderAllTasks, 1000);
+                } else {
+                    alert('启动失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                alert('网络错误: ' + err.message);
+            })
+            .finally(() => {
+                if (btn) {
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '🚀 一键立即分析';
+                    }, 5000); // 5秒后恢复按钮
+                }
+            });
+    };
 </script>
 """
     
@@ -1262,6 +1306,8 @@ def render_config_page(
             <option value="simple">📝 精简报告 (极速)</option>
         </select>
       </div>
+      
+
       
       <!-- 使用说明 -->
       <details class="usage-tips" style="margin-bottom: 1rem; padding: 0.75rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 0.5rem; cursor: pointer;">
