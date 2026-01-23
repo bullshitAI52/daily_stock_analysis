@@ -70,3 +70,4 @@ verify_*.py
 # Static Site
 public/
 desktop/src-tauri/binaries/
+desktop/src-tauri/python_backend/
