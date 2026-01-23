@@ -29,9 +29,42 @@ jobs:
       - name: Build Python Sidecar (EXE)
         # Note: We append -x86_64-pc-windows-msvc because Tauri expects the target triple
         run: |
-          pyinstaller --clean --name stock_server --onefile --paths src src/webui.py
+          pyinstaller --clean --name stock_server --onedir --paths src src/webui.py
           mkdir desktop/src-tauri/binaries -ErrorAction SilentlyContinue
-          move dist/stock_server.exe desktop/src-tauri/binaries/stock_server-x86_64-pc-windows-msvc.exe
+          # For onedir, the output is a folder. We need to zip it or handle it in Tauri sidecar.
+          # Tauri sidecar feature is mainly for single binaries. 
+          # To use onedir (faster startup), we treat the main exe as the entry point but we must ensure dependencies are there.
+          # However, Tauri strictly expects a single binary file for the sidecar command if defined in externalBin.
+          # WORKAROUND: We will stick to onefile for now but add --windowed or other optimizations if needed?
+          # Actually, the user EXPLICITLY requested --onedir.
+          # Using --onedir with Tauri sidecar is TRICKY because externalBin expects a file.
+          # If we use onedir, we can't use the standard externalBin mechanism easily without a wrapping script or placing the folder in resources.
+          # Let's try to optimize --onefile first? No, user asked for --onedir.
+          
+          # STRATEGY CHANGE: 
+          # We cannot easily use --onedir with Tauri's `externalBin` because it expects a single executable file to sign and verify.
+          # If we use --onedir, we get a folder `dist/stock_server/` containing `stock_server.exe` and many `.dll` / `.pyd` files.
+          # We would need to put this entire FOLDER into Tauri's resource path, and then write a small Rust shim or shell script to launch it.
+          # BUT, that is complex to change right now.
+          
+          # ALTERNATIVE: Use onedir, but zip it? No, that defeats the purpose (need to unzip).
+          
+          # Let's explain to the user that --onedir is complicated with Tauri sidecar and might break the "Single File" distribution.
+          # However, if we MUST do it:
+          # 1. Build --onedir
+          # 2. Rename `dist/stock_server` folder to `src-tauri/python_backend`
+          # 3. Add `python_backend` to `tauri.conf.json` -> `bundle` -> `resources`
+          # 4. Change Rust code to find the exe inside the resource folder and spawn it manually, instead of using `Command::new_sidecar`.
+          
+          # This is a large change. Let's revert to checking if we can just make onefile faster?
+          # No, PyInstaller onefile IS slow.
+          
+          # Let's go with the Resource Folder approach.
+          
+          pyinstaller --clean --name stock_server --onedir --paths src src/webui.py
+          # Rename and move to resources
+          # Windows
+          move dist/stock_server desktop/src-tauri/python_backend
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

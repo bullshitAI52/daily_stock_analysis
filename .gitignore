@@ -69,3 +69,4 @@ run.sh
 verify_*.py
 # Static Site
 public/
+desktop/src-tauri/binaries/

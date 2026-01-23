@@ -23,8 +23,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "externalBin": [
-      "binaries/stock_server"
+    "externalBin": [],
+    "resources": [
+      "python_backend"
     ],
     "icon": [
       "icons/32x32.png",

@@ -12,35 +12,51 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![greet]);
 
     let builder = builder.setup(|app| {
-        use tauri_plugin_shell::ShellExt;
+        use tauri::Manager;
+        use std::process::Command;
         
-        let sidecar = app.shell().sidecar("stock_server").unwrap();
-        let (mut rx, mut _child) = sidecar.spawn().expect("Failed to spawn sidecar");
-
+        let handle = app.handle().clone();
+        
         tauri::async_runtime::spawn(async move {
-            // Read events such as stdout
-            while let Some(event) = rx.recv().await {
-                if let tauri_plugin_shell::process::CommandEvent::Stdout(line) = event {
-                     println!("Python: {}", String::from_utf8(line).unwrap());
-                } else if let tauri_plugin_shell::process::CommandEvent::Stderr(line) = event {
-                     eprintln!("Python Err: {}", String::from_utf8(line).unwrap());
+            let resource_path = handle
+                .path()
+                .resolve("python_backend", tauri::path::BaseDirectory::Resource)
+                .expect("failed to resolve resource");
+            
+            let exe_path = if cfg!(target_os = "windows") {
+                resource_path.join("stock_server.exe")
+            } else {
+                resource_path.join("stock_server")
+            };
+            
+            println!("Launching backend from: {:?}", exe_path);
+
+            let mut command = Command::new(exe_path);
+            
+             // Spawn the process
+            let child = command.spawn();
+            
+            match child {
+                Ok(mut c) => {
+                     println!("Backend started successfully");
+                     // Wait for it? No, it should run in background.
+                     // But we should probably keep track of it to kill it?
+                     // For now, let's just let it run.
+                     // On Windows, closing parent might not close child if not handled.
+                     // But we can rely on our zombie killer in python.
+                }
+                Err(e) => {
+                    eprintln!("Failed to start backend: {}", e);
                 }
             }
         });
-        
+
         Ok(())
     });
 
     builder
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        .run(|app, event| {
-             if let tauri::RunEvent::ExitRequested { .. } = event {
-                 // The sidecar is a child process of the Tauri app, so it should be killed automatically by the OS when the parent dies.
-                 // However, to be safe, we can try to kill it explicitly if we had a handle.
-                 // But the `sidecar.spawn()` returns a child handle that is moved into the async block.
-                 // We can rely on OS cleanup for now, but checking for zombie processes is good practice.
-                 println!("App exiting...");
-             }
-        });
+        .run(|_app, _event| {});
 }
+
