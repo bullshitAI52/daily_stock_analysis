@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Analyzer AI</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1e293b;
+    }
+
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #2563eb;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      display: inline-block;
+      box-sizing: border-box;
+      animation: rotation 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    h2 {
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+
+    p {
+      color: #64748b;
+      font-size: 0.9em;
+      margin: 0;
+    }
+
+    .retry-btn {
+      margin-top: 20px;
+      padding: 8px 16px;
+      background: #e2e8f0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none;
+    }
+
+    .retry-btn:hover {
+      background: #cbd5e1;
+    }
+  </style>
+</head>
+
+<body>
+  <span class="loader"></span>
+  <h2>正在启动分析引擎...</h2>
+  <p id="status-text">初始化 Python 服务中，请稍候</p>
+  <button id="retry-btn" class="retry-btn" onclick="checkServer()">手动重试</button>
+
+  <script>
+    const TARGET_URL = 'http://127.0.0.1:8000';
+    const MAX_RETRIES = 30; // 30 * 1s = 30s timeout
+    let retries = 0;
+
+    async function checkServer() {
+      try {
+        // Try to fetch health endpoint
+        const response = await fetch(TARGET_URL);
+        // We just check if it connects, even 404 is fine as it means server is up
+        // Or better, check for a specific running string if possible
+
+        if (response.ok || response.status === 200) {
+          document.getElementById('status-text').innerText = "引擎已就绪，正在进入...";
+          // Small delay to let user see success
+          setTimeout(() => {
+            window.location.href = TARGET_URL;
+          }, 500);
+          return;
+        }
+      } catch (e) {
+        console.log("Server not ready yet...", e);
+        document.getElementById('status-text').innerText = `正在连接服务... (${retries}/${MAX_RETRIES}) \n${e.message || e}`;
+      }
+
+      retries++;
+      if (retries < MAX_RETRIES) {
+        document.getElementById('status-text').innerText = `正在连接服务... (${retries}/${MAX_RETRIES})`;
+        setTimeout(checkServer, 1000);
+      } else {
+        document.querySelector('.loader').style.display = 'none';
+        document.querySelector('h2').innerText = "启动超时";
+        document.getElementById('status-text').innerText = "无法连接到 Python 后端服务。请检查日志。";
+        document.getElementById('retry-btn').style.display = 'block';
+      }
+    }
+
+    // Start checking
+    setTimeout(checkServer, 1000);
+  </script>
+</body>
+
+</html>

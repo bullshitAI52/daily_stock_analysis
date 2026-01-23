@@ -635,6 +635,73 @@ button:active {
     border-top: 1px dashed #e2e8f0;
     padding-top: 0.5rem;
 }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+    backdrop-filter: blur(2px);
+}
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background-color: #fefefe;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    position: relative;
+    animation: modalSlideIn 0.3s ease;
+}
+@keyframes modalSlideIn {
+    from {transform: translateY(-20px); opacity: 0;}
+    to {transform: translateY(0); opacity: 1;}
+}
+.close-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1.25rem;
+    color: #aaa;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+.close-modal:hover {
+    color: #000;
+}
+.settings-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: var(--text-light);
+    width: auto;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.settings-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: #f0f9ff;
+}
 """
 
 
@@ -1244,19 +1311,111 @@ def render_config_page(
                 alert('网络错误: ' + err.message);
             })
             .finally(() => {
+                const btn = getEl('btn_full_analysis');
                 if (btn) {
                     setTimeout(() => {
                         btn.disabled = false;
                         btn.innerHTML = '🚀 一键立即分析';
-                    }, 5000); // 5秒后恢复按钮
+                    }, 5000); 
                 }
             });
     };
+
+    // API 设置相关逻辑
+    window.openSettings = function() {
+        getEl('settingsModal').classList.add('show');
+        loadSettings();
+    }
+    
+    window.closeSettings = function() {
+        getEl('settingsModal').classList.remove('show');
+    }
+    
+    window.loadSettings = function() {
+        fetch('/api/config')
+            .then(r => r.json())
+            .then(res => {
+                if(res.success) {
+                    const data = res.data;
+                    getEl('api_provider').value = data.api_provider;
+                    getEl('base_url').value = data.openai_base_url;
+                    getEl('model_name').value = data.api_provider === 'gemini' ? data.gemini_model : data.openai_model;
+                    
+                    // Key 只显示占位符
+                    if (data.has_openai_key && data.api_provider !== 'gemini') {
+                        getEl('api_key').placeholder = "已配置 (留空保持不变)";
+                        getEl('api_key').value = "";
+                    } else if (data.has_gemini_key && data.api_provider === 'gemini') {
+                         getEl('api_key').placeholder = "已配置 (留空保持不变)";
+                         getEl('api_key').value = "";
+                    } else {
+                        getEl('api_key').placeholder = "输入 API Key";
+                        getEl('api_key').value = "";
+                    }
+                    toggleSettingsFields();
+                }
+            });
+    }
+    
+    window.saveSettings = function() {
+        const provider = getEl('api_provider').value;
+        const form = new FormData();
+        form.append('api_provider', provider);
+        
+        const key = getEl('api_key').value;
+        if (key) form.append('api_key', key);
+        
+        if (provider !== 'gemini') {
+             form.append('base_url', getEl('base_url').value);
+             form.append('model_name', getEl('model_name').value);
+        } else {
+             form.append('model_name', getEl('model_name').value); 
+        }
+        
+        const btn = getEl('btn_save_settings');
+        const oldText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+        
+        fetch('/api/config', {
+            method: 'POST',
+            body: form
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                alert('设置已保存！');
+                closeSettings();
+            } else {
+                alert('保存失败: ' + res.error);
+            }
+        })
+        .catch(e => alert('错误: ' + e))
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = oldText;
+        });
+    }
+    
+    window.toggleSettingsFields = function() {
+        const provider = getEl('api_provider').value;
+        const baseUrlGroup = getEl('base_url_group');
+        
+        if (provider === 'gemini') {
+            baseUrlGroup.style.display = 'none';
+        } else {
+            baseUrlGroup.style.display = 'block';
+        }
+    }
 </script>
 """
     
     content = f"""
-  <div class="container">
+  <div class="container" style="position: relative;">
+    <button class="settings-btn" onclick="openSettings()" title="设置 API">
+        <span>⚙️</span> 设置 API
+    </button>
+    
     <h2>📈 A/H股分析</h2>
     
     <!-- 快速分析区域 -->
@@ -1353,6 +1512,40 @@ def render_config_page(
           <p id="footer_advice_short" style="margin: 0; margin-bottom: 4px; font-weight: bold; color: #1e40af; font-size: 0.9rem;"></p>
           <p id="footer_advice_long" style="margin: 0; color: #1e3a8a; font-size: 0.85rem;"></p>
       </div>
+    </div>
+  </div>
+  
+  <!-- 设置模态框 -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeSettings()">&times;</span>
+        <h3 style="margin-top: 0; margin-bottom: 1rem;">⚙️ API 设置</h3>
+        
+        <div class="form-group">
+            <label>AI 提供商</label>
+            <select id="api_provider" onchange="toggleSettingsFields()" style="width: 100%; padding: 0.5rem;">
+                <option value="gemini">Google Gemini (官方)</option>
+                <option value="openai">OpenAI 兼容 (DeepSeek/ChatGPT)</option>
+            </select>
+        </div>
+        
+        <div class="form-group" id="base_url_group">
+            <label>API Base URL</label>
+            <input type="text" id="base_url" placeholder="https://api.openai.com/v1">
+            <div class="text-muted">例如: https://api.deepseek.com</div>
+        </div>
+        
+        <div class="form-group">
+            <label>API Key</label>
+            <input type="password" id="api_key" placeholder="输入 API Key">
+        </div>
+        
+        <div class="form-group">
+            <label>模型名称</label>
+            <input type="text" id="model_name" placeholder="模型名称, 如 gpt-4o-mini">
+        </div>
+        
+        <button id="btn_save_settings" onclick="saveSettings()">保存配置</button>
     </div>
   </div>
   

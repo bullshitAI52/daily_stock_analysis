@@ -43,6 +43,14 @@ class WebRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         """处理 POST 请求"""
         self.router.dispatch_post(self)
+        
+    def do_OPTIONS(self) -> None:
+        """处理 CORS 预检请求"""
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
     
     def log_message(self, fmt: str, *args) -> None:
         """自定义日志格式（使用 logging 而非 stderr）"""
@@ -110,18 +118,94 @@ class WebServer:
     def _create_server(self) -> ThreadingHTTPServer:
         """创建 HTTP 服务器实例"""
         handler_class = self._create_handler_class()
-        return ThreadingHTTPServer((self.host, self.port), handler_class)
+        
+        # 允许地址复用（解决 TIME_WAIT 问题）
+        class ReusableTCPServer(ThreadingHTTPServer):
+            allow_reuse_address = True
+            
+        return ReusableTCPServer((self.host, self.port), handler_class)
     
+    def _kill_zombie_process(self, port: int):
+        """此端口被占用时尝试强制杀掉旧进程 (使用 psutil)"""
+        import psutil
+        import os
+        import signal
+        import sys
+        
+        try:
+            # 遍历所有连接
+            logger.info(f"正在扫描占用端口 {port} 的进程...")
+            print(f"正在扫描占用端口 {port} 的进程...", file=sys.stderr)
+            sys.stderr.flush()
+            
+            killed = False
+            for proc in psutil.process_iter(['pid', 'name']):
+                try:
+                    for conn in proc.connections(kind='inet'):
+                        if conn.laddr.port == port:
+                            pid = proc.pid
+                            if pid == os.getpid():
+                                continue
+                                
+                            logger.warning(f"发现占用端口 {port} 的进程: {pid} ({proc.name()})")
+                            print(f"发现占用端口 {port} 的进程: {pid} ({proc.name()})", file=sys.stderr)
+                            
+                            proc.kill()
+                            killed = True
+                            
+                            logger.info(f"已发送 SIGKILL 给进程 {pid}")
+                            print(f"已发送 SIGKILL 给进程 {pid}", file=sys.stderr)
+                            sys.stderr.flush()
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+            
+            if not killed:
+                logger.info(f"未发现占用端口 {port} 的进程 (可能已自动退出)")
+                print(f"未发现占用端口 {port} 的进程", file=sys.stderr)
+                
+        except Exception as e:
+            logger.error(f"清理端口占用失败: {e}")
+            print(f"清理端口占用失败: {e}", file=sys.stderr)
+            sys.stderr.flush()
+
     def run(self) -> None:
         """
         前台运行服务器（阻塞）
         
         按 Ctrl+C 退出
         """
-        self._server = self._create_server()
+        import sys
+        import time
+        
+        try:
+            self._server = self._create_server()
+        except OSError as e:
+             if 'Address already in use' in str(e):
+                 logger.warning(f"端口 {self.port} 被占用，尝试并杀死旧进程...")
+                 print(f"端口 {self.port} 被占用，尝试并杀死旧进程...", file=sys.stderr)
+                 sys.stderr.flush()
+                 
+                 self._kill_zombie_process(self.port)
+                 
+                 # 等待释放
+                 time.sleep(1.5)
+                 
+                 # 重试
+                 try:
+                    self._server = self._create_server()
+                    print(f"端口 {self.port} 重绑定成功!", file=sys.stderr)
+                 except Exception as retry_e:
+                    print(f"端口 {self.port} 重绑定失败: {retry_e}", file=sys.stderr)
+                    raise retry_e
+             else:
+                 raise e
         
         logger.info(f"WebUI 服务启动: {self.address}")
         print(f"WebUI 服务启动: {self.address}")
+        import sys
+        print(f"WebUI 服务启动: {self.address}", file=sys.stderr) # Ensure visible in log
+        sys.stdout.flush()
+        sys.stderr.flush()
         
         # 打印路由列表
         routes = self.router.list_routes()

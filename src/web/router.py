@@ -283,6 +283,19 @@ def create_default_router() -> Router:
         lambda q: api_handler.handle_download_report(q),
         "下载详细报告"
     )
+
+    # === 设置路由 ===
+    router.register(
+        "/api/config", "GET",
+        lambda q: api_handler.handle_get_api_config(q),
+        "获取 API 配置"
+    )
+    
+    router.register(
+        "/api/config", "POST",
+        lambda f: api_handler.handle_update_api_config(f),
+        "更新 API 配置"
+    )
     
     return router
 

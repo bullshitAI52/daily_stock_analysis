@@ -53,6 +53,11 @@ class Response:
     def send(self, handler: 'BaseHTTPRequestHandler') -> None:
         """发送响应到客户端"""
         handler.send_response(self.status)
+        # CORS Headers
+        handler.send_header("Access-Control-Allow-Origin", "*")
+        handler.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        handler.send_header("Access-Control-Allow-Headers", "Content-Type")
+        
         handler.send_header("Content-Type", self.content_type)
         handler.send_header("Content-Length", str(len(self.body)))
         handler.end_headers()
@@ -448,10 +453,53 @@ class ApiHandler:
             
         except Exception as e:
             logger.error(f"创建 ZIP 文件失败: {e}")
-            return JsonResponse(
-                {"success": False, "error": f"创建压缩包失败: {str(e)}"},
-                status=HTTPStatus.INTERNAL_SERVER_ERROR
-            )
+    def handle_get_api_config(self, query: Dict[str, list]) -> Response:
+        """获取当前 API 配置信息 (敏感信息脱敏)"""
+        from config import get_config
+        config = get_config()
+        
+        # 脱敏处理
+        def mask_key(k):
+            if not k: return ""
+            if len(k) < 8: return "*" * len(k)
+            return k[:4] + "*" * (len(k) - 8) + k[-4:]
+            
+        return JsonResponse({
+            "success": True,
+            "data": {
+                "api_provider": config.ai_provider,
+                "openai_base_url": config.openai_base_url or "",
+                "openai_model": config.openai_model,
+                "has_openai_key": bool(config.openai_api_key),
+                "has_gemini_key": bool(config.gemini_api_key),
+                "gemini_model": config.gemini_model,
+                # For frontend display only (masked)
+                "masked_openai_key": mask_key(config.openai_api_key),
+                "masked_gemini_key": mask_key(config.gemini_api_key)
+            }
+        })
+
+    def handle_update_api_config(self, form_data: Dict[str, list]) -> Response:
+        """更新 API 配置"""
+        try:
+            # 提取参数
+            data = {}
+            if "api_provider" in form_data: data["api_provider"] = form_data["api_provider"][0]
+            if "api_key" in form_data: data["api_key"] = form_data["api_key"][0]
+            if "base_url" in form_data: data["base_url"] = form_data["base_url"][0]
+            if "model_name" in form_data: data["model_name"] = form_data["model_name"][0]
+            
+            if not data:
+                return JsonResponse({"success": False, "error": "无效的配置数据"}, status=HTTPStatus.BAD_REQUEST)
+
+            from web.services import get_config_service
+            svc = get_config_service()
+            result = svc.set_api_config(data)
+            
+            return JsonResponse(result)
+        except Exception as e:
+            logger.error(f"更新配置失败: {e}")
+            return JsonResponse({"success": False, "error": str(e)}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 # ============================================================

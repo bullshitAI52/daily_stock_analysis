@@ -159,6 +159,12 @@ class DatabaseManager:
             pool_pre_ping=True,  # 连接健康检查
         )
         
+        # 启用 WAL 模式 (Write-Ahead Logging) 以支持更高并发
+        if 'sqlite' in db_url:
+            with self._engine.connect() as connection:
+                connection.exec_driver_sql("PRAGMA journal_mode=WAL;")
+                connection.exec_driver_sql("PRAGMA synchronous=NORMAL;")
+        
         # 创建 Session 工厂
         self._SessionLocal = sessionmaker(
             bind=self._engine,

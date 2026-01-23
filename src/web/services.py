@@ -124,6 +124,73 @@ class ConfigService:
         trailing_newline = env_text.endswith("\n") if env_text else True
         out = "\n".join(out_lines)
         return out + ("\n" if trailing_newline else "")
+    
+    def set_api_config(self, config_data: Dict[str, str]) -> Dict[str, Any]:
+        """
+        更新 API 配置
+        
+        Args:
+            config_data: 包含 api_provider, api_key, base_url, model_name 的字典
+            
+        Returns:
+            更新后的配置摘要
+        """
+        env_text = self.read_env_text()
+        
+        # 映射前端字段到环境变量
+        field_map = {
+            'api_provider': 'AI_PROVIDER',
+            'api_key': 'OPENAI_API_KEY', # 简化处理：统一存到 OpenAI 兼容字段 (如果是 gemini，逻辑需调整)
+            'base_url': 'OPENAI_BASE_URL',
+            'model_name': 'OPENAI_MODEL'
+        }
+        
+        # 特殊处理：如果是 Gemini，存到 GEMINI_API_KEY
+        provider = config_data.get('api_provider', 'openai')
+        if provider == 'gemini':
+             field_map['api_key'] = 'GEMINI_API_KEY'
+             field_map['model_name'] = 'GEMINI_MODEL'
+             # Gemini 通常不需要 base_url，除非是中转
+        
+        # 批量更新
+        current_text = env_text
+        for field, env_key in field_map.items():
+            if field in config_data:
+                # 使用简单的正则替换或追加
+                val = config_data[field]
+                pattern = f"^{env_key}=.*$"
+                replacement = f"{env_key}={val}"
+                
+                # 检查是否存在
+                if re.search(pattern, current_text, re.MULTILINE):
+                    current_text = re.sub(pattern, replacement, current_text, flags=re.MULTILINE)
+                else:
+                    # 追加
+                    if not current_text.endswith('\n'):
+                        current_text += '\n'
+                    current_text += f"{replacement}\n"
+        
+        self.write_env_text(current_text)
+        
+        # === 关键：热更新内存中的配置 ===
+        # 注意：这里需要导入 Config 类，但为了避免循环导入，我们在方法内导入
+        from config import get_config
+        config = get_config()
+        
+        # 更新单例对象的属性
+        if 'api_provider' in config_data:
+            config.ai_provider = config_data['api_provider']
+            
+        if provider == 'gemini':
+            if 'api_key' in config_data: config.gemini_api_key = config_data['api_key']
+            if 'model_name' in config_data: config.gemini_model = config_data['model_name']
+        else:
+            # OpenAI / Custom
+            if 'api_key' in config_data: config.openai_api_key = config_data['api_key']
+            if 'base_url' in config_data: config.openai_base_url = config_data['base_url']
+            if 'model_name' in config_data: config.openai_model = config_data['model_name']
+            
+        return {"success": True, "message": "配置已保存并热加载"}
 
 
 # ============================================================
