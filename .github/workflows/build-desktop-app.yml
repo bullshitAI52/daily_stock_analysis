@@ -114,33 +114,9 @@ jobs:
 
       - name: Build Python Sidecar (Mac)
         run: |
-          pyinstaller --clean --name stock_server --onefile --paths src src/webui.py
-          mkdir -p desktop/src-tauri/binaries
-          # Github Actions Mac runner is likely x86_64 or arm64? 
-          # setup-python usually matches runner. macos-latest is now ARM64 (M1) often, but we should be careful.
-          # We'll build for the host arch.
-          mv dist/stock_server desktop/src-tauri/binaries/stock_server-x86_64-apple-darwin
-          # Also support arm64 if running on arm runner, but let's just stick to cross or host.
-          # Actually, on GitHub Actions macos-latest (14) is arm64. macos-13 is x86_64.
-          # Let's assume user wants to run on their machine which is arm64, but for distribution we might want both.
-          # For now, let's just do what works on the runner.
-          # Check runner arch
-          uname -m
-
-      - name: Rename Binary for Tauri
-        run: |
-          # Detect architecture and rename accordingly
-          ARCH=$(uname -m)
-          if [ "$ARCH" = "x86_64" ]; then
-            mv desktop/src-tauri/binaries/stock_server-x86_64-apple-darwin desktop/src-tauri/binaries/stock_server-x86_64-apple-darwin || true
-          else
-             # Assuming arm64
-             mv desktop/src-tauri/binaries/stock_server-x86_64-apple-darwin desktop/src-tauri/binaries/stock_server-aarch64-apple-darwin || true
-          fi
-          # Note: The above move command in previous step might have failed if name didn't match. 
-          # Let's just blindly rename whatever is in dist
-          cp dist/stock_server desktop/src-tauri/binaries/stock_server-x86_64-apple-darwin
-          cp dist/stock_server desktop/src-tauri/binaries/stock_server-aarch64-apple-darwin
+          pyinstaller --clean --name stock_server --onedir --paths src src/webui.py
+          # Rename and move to resources
+          mv dist/stock_server desktop/src-tauri/python_backend
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
