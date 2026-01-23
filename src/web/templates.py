@@ -1397,6 +1397,24 @@ def render_config_page(
         });
     }
     
+    window.updateProviderDefaults = function() {
+        toggleSettingsFields(); // 先更新UI显示
+        
+        const provider = getEl('api_provider').value;
+        const baseUrlInput = getEl('base_url');
+        const modelInput = getEl('model_name');
+        
+        if (provider === 'deepseek') {
+            baseUrlInput.value = 'https://api.deepseek.com';
+            modelInput.value = 'deepseek-chat';
+        } else if (provider === 'qwen') {
+            baseUrlInput.value = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+            modelInput.value = 'qwen-plus';
+        } else if (provider === 'gemini') {
+            modelInput.value = 'gemini-2.0-flash';
+        }
+    }
+    
     window.toggleSettingsFields = function() {
         const provider = getEl('api_provider').value;
         const baseUrlGroup = getEl('base_url_group');
@@ -1523,9 +1541,11 @@ def render_config_page(
         
         <div class="form-group">
             <label>AI 提供商</label>
-            <select id="api_provider" onchange="toggleSettingsFields()" style="width: 100%; padding: 0.5rem;">
+            <select id="api_provider" onchange="updateProviderDefaults()" style="width: 100%; padding: 0.5rem;">
                 <option value="gemini">Google Gemini (官方)</option>
-                <option value="openai">OpenAI 兼容 (DeepSeek/ChatGPT)</option>
+                <option value="deepseek">DeepSeek (深度求索)</option>
+                <option value="qwen">阿里通义千问 (Qwen)</option>
+                <option value="openai">其他 OpenAI 兼容接口</option>
             </select>
         </div>
         

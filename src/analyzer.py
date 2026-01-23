@@ -427,16 +427,23 @@ class GeminiAnalyzer:
         # 检查 Gemini API Key 是否有效（过滤占位符）
         gemini_key_valid = self._api_key and not self._api_key.startswith('your_') and len(self._api_key) > 10
         
-        # 优先尝试初始化 Gemini
-        if gemini_key_valid:
+        # Determine strict provider preference
+        prefer_openai_compatible = config.ai_provider and config.ai_provider != 'gemini'
+        
+        # 优先尝试初始化 Gemini (仅当 provider 为 gemini 或 默认 且 key 有效时)
+        if gemini_key_valid and not prefer_openai_compatible:
             try:
                 self._init_model()
             except Exception as e:
                 logger.warning(f"Gemini 初始化失败: {e}，尝试 OpenAI 兼容 API")
                 self._init_openai_fallback()
         else:
-            # Gemini Key 未配置，尝试 OpenAI
-            logger.info("Gemini API Key 未配置，尝试使用 OpenAI 兼容 API")
+            # Explicitly not using Gemini or Key invalid
+            if prefer_openai_compatible:
+                logger.info(f"配置指定使用 {config.ai_provider} (OpenAI 兼容模式)")
+            else:
+                logger.info("Gemini API Key 未配置，尝试使用 OpenAI 兼容 API")
+            
             self._init_openai_fallback()
         
         # 两者都未配置
