@@ -14,7 +14,7 @@ lsof -ti:8000 | xargs kill -9 2>/dev/null
 # 启动 Python WebUI
 echo "正在启动股票分析系统..."
 echo "如浏览器未自动打开，请访问: http://127.0.0.1:8000"
-python src/webui.py
+python3 src/webui.py
 
 # 保持窗口不关闭（可选，方便看日志）
 # read -p "按回车键退出..."
